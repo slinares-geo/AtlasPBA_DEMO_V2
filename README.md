@@ -4,8 +4,7 @@ Aplicacion web estatica para explorar resultados electorales de la Provincia de 
 
 ## Captura
 
-<img width="1906" height="922" alt="image" src="https://github.com/user-attachments/assets/c2c67eec-6662-4516-806b-f48df30d58ab" />
-
+> Placeholder: agregar una captura de la interfaz principal del atlas.
 
 ## Funcionalidades principales
 

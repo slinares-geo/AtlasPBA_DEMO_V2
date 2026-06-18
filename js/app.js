@@ -852,12 +852,16 @@ function competitivenessRankingItemHtml(item, index) {
   const target = unitData(item.unit, state.targetElection)[item.key];
   const category = competitivenessCategory(target?.margen) || "Sin categoría";
   const gapVotes = competitivenessVoteGap(target);
-  const change = state.viewMode === "comparison" ? `<small>Cambio: ${escapeHtml(formatPp(item.value))}</small>` : "";
+  const change = state.viewMode === "comparison" ? `<span class="rank-meta">Cambio: ${escapeHtml(formatPp(item.value))}</span>` : "";
   return `
-    <button class="ranking-item ranking-item-competitiveness ${isSelected(item.key, item.unit) ? "is-active" : ""}" data-key="${item.key}" data-unit="${item.unit}">
-      <span class="rank-index">${String(index + 1).padStart(2, "0")}</span>
-      <span><strong>${escapeHtml(territoryLabel(item.key, item.unit))}</strong><span class="rank-category">${escapeHtml(category)}</span></span>
-      <span class="rank-value"><b>${escapeHtml(formatGapPp(target?.margen))}</b><small>${escapeHtml(formatNumber(gapVotes))} votos</small>${change}</span>
+  <button class="ranking-item ranking-item-competitiveness ${isSelected(item.key, item.unit) ? "is-active" : ""}" data-key="${item.key}" data-unit="${item.unit}">
+    <span class="rank-index">${String(index + 1).padStart(2, "0")}</span>
+    <span class="rank-main"><strong>${escapeHtml(territoryLabel(item.key, item.unit))}</strong><span class="rank-category">${escapeHtml(category)}</span></span>
+    <span class="rank-competitiveness-metrics">
+      <span class="rank-meta">Diferencia: ${escapeHtml(formatGapPp(target?.margen))}</span>
+      <span class="rank-meta">Brecha: ${escapeHtml(formatNumber(gapVotes))} votos</span>
+      ${change}
+    </span>
     </button>
   `;
 }
