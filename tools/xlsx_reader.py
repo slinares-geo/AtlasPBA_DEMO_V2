@@ -94,4 +94,3 @@ def iter_xlsx_rows(path, sheet_name=None):
                     values[column] = value
                 yield values
                 element.clear()
-
