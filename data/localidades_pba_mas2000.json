@@ -1,0 +1,1320 @@
+{
+  "source": "https://apis.datos.gob.ar/georef/api/v2.0/localidades-censales.json",
+  "scope": "Provincia de Buenos Aires, localidades censales de más de 2.000 habitantes",
+  "localities": [
+    {
+      "clc": "06119060",
+      "name": "Gómez",
+      "party_code": "06119",
+      "party_name": "Brandsen"
+    },
+    {
+      "clc": "06588040",
+      "name": "Dudignac",
+      "party_code": "06588",
+      "party_name": "9 de Julio"
+    },
+    {
+      "clc": "06651030",
+      "name": "Darregueira",
+      "party_code": "06651",
+      "party_name": "Puán"
+    },
+    {
+      "clc": "06154050",
+      "name": "Tres Algarrobos",
+      "party_code": "06154",
+      "party_name": "Carlos Tejedor"
+    },
+    {
+      "clc": "06497070",
+      "name": "Olivera",
+      "party_code": "06497",
+      "party_name": "Luján"
+    },
+    {
+      "clc": "06778015",
+      "name": "El Lauquen - Principado",
+      "party_code": "06778",
+      "party_name": "San Vicente"
+    },
+    {
+      "clc": "06168010",
+      "name": "Castelli",
+      "party_code": "06168",
+      "party_name": "Castelli"
+    },
+    {
+      "clc": "06875060",
+      "name": "Médanos",
+      "party_code": "06875",
+      "party_name": "Villarino"
+    },
+    {
+      "clc": "06420040",
+      "name": "Mar del Tuyú - Mar de Ajó - San Bernardo",
+      "party_code": "06420",
+      "party_name": "La Costa"
+    },
+    {
+      "clc": "06294040",
+      "name": "Ferré - La Trinidad",
+      "party_code": "06294",
+      "party_name": "General Arenales"
+    },
+    {
+      "clc": "06406010",
+      "name": "Henderson",
+      "party_code": "06406",
+      "party_name": "Hipólito Yrigoyen"
+    },
+    {
+      "clc": "06175010",
+      "name": "Colón",
+      "party_code": "06175",
+      "party_name": "Colón"
+    },
+    {
+      "clc": "06189030",
+      "name": "Coronel Dorrego",
+      "party_code": "06189",
+      "party_name": "Coronel Dorrego"
+    },
+    {
+      "clc": "06392040",
+      "name": "Emilio V. Bunge",
+      "party_code": "06392",
+      "party_name": "General Villegas"
+    },
+    {
+      "clc": "06385010",
+      "name": "Baigorrita",
+      "party_code": "06385",
+      "party_name": "General Viamonte"
+    },
+    {
+      "clc": "06511020",
+      "name": "Maipú",
+      "party_code": "06511",
+      "party_name": "Maipú"
+    },
+    {
+      "clc": "06280040",
+      "name": "Miramar",
+      "party_code": "06280",
+      "party_name": "General Alvarado"
+    },
+    {
+      "clc": "06679010",
+      "name": "América",
+      "party_code": "06679",
+      "party_name": "Rivadavia"
+    },
+    {
+      "clc": "06693020",
+      "name": "Roque Pérez",
+      "party_code": "06693",
+      "party_name": "Roque Pérez"
+    },
+    {
+      "clc": "06343030",
+      "name": "Ranchos",
+      "party_code": "06343",
+      "party_name": "General Paz"
+    },
+    {
+      "clc": "06147030",
+      "name": "Carlos Casares",
+      "party_code": "06147",
+      "party_name": "Carlos Casares"
+    },
+    {
+      "clc": "06056010",
+      "name": "Bahía Blanca",
+      "party_code": "06056",
+      "party_name": "Bahía Blanca"
+    },
+    {
+      "clc": "06623140",
+      "name": "Villa San José",
+      "party_code": "06623",
+      "party_name": "Pergamino"
+    },
+    {
+      "clc": "06294010",
+      "name": "Arribeños",
+      "party_code": "06294",
+      "party_name": "General Arenales"
+    },
+    {
+      "clc": "06875070",
+      "name": "Pedro Luro",
+      "party_code": "06875",
+      "party_name": "Villarino"
+    },
+    {
+      "clc": "06049040",
+      "name": "Chillar",
+      "party_code": "06049",
+      "party_name": "Azul"
+    },
+    {
+      "clc": "06609080",
+      "name": "Pehuajó",
+      "party_code": "06609",
+      "party_name": "Pehuajó"
+    },
+    {
+      "clc": "06161010",
+      "name": "Carmen de Areco",
+      "party_code": "06161",
+      "party_name": "Carmen de Areco"
+    },
+    {
+      "clc": "06658010",
+      "name": "Quilmes",
+      "party_code": "06658",
+      "party_name": "Quilmes"
+    },
+    {
+      "clc": "06315010",
+      "name": "General Juan Madariaga",
+      "party_code": "06315",
+      "party_name": "General Juan Madariaga"
+    },
+    {
+      "clc": "06714010",
+      "name": "Arroyo Dulce",
+      "party_code": "06714",
+      "party_name": "Salto"
+    },
+    {
+      "clc": "06651080",
+      "name": "Puan",
+      "party_code": "06651",
+      "party_name": "Puán"
+    },
+    {
+      "clc": "06119045",
+      "name": "Campos de Roca - Posada de Los Lagos",
+      "party_code": "06119",
+      "party_name": "Brandsen"
+    },
+    {
+      "clc": "06056030",
+      "name": "General Daniel Cerri",
+      "party_code": "06056",
+      "party_name": "Bahía Blanca"
+    },
+    {
+      "clc": "06812010",
+      "name": "General Conesa",
+      "party_code": "06812",
+      "party_name": "Tordillo"
+    },
+    {
+      "clc": "06497025",
+      "name": "Club de Campo Los Puentes",
+      "party_code": "06497",
+      "party_name": "Luján"
+    },
+    {
+      "clc": "06518010",
+      "name": "Coronel Vidal",
+      "party_code": "06518",
+      "party_name": "Mar Chiquita"
+    },
+    {
+      "clc": "06203100",
+      "name": "Villa Arcadia",
+      "party_code": "06203",
+      "party_name": "Coronel Suárez"
+    },
+    {
+      "clc": "06266040",
+      "name": "Los Cardales",
+      "party_code": "06266",
+      "party_name": "Exaltación de la Cruz"
+    },
+    {
+      "clc": "06266150",
+      "name": "Las Vizcachas",
+      "party_code": "06266",
+      "party_name": "Exaltación de la Cruz"
+    },
+    {
+      "clc": "06469080",
+      "name": "Lincoln",
+      "party_code": "06469",
+      "party_name": "Lincoln"
+    },
+    {
+      "clc": "06875040",
+      "name": "Juan Cousté",
+      "party_code": "06875",
+      "party_name": "Villarino"
+    },
+    {
+      "clc": "06875050",
+      "name": "Mayor Buratovich",
+      "party_code": "06875",
+      "party_name": "Villarino"
+    },
+    {
+      "clc": "06466010",
+      "name": "Lezama",
+      "party_code": "06466",
+      "party_name": "Lezama"
+    },
+    {
+      "clc": "06392050",
+      "name": "General Villegas",
+      "party_code": "06392",
+      "party_name": "General Villegas"
+    },
+    {
+      "clc": "06700060",
+      "name": "Pigüé",
+      "party_code": "06700",
+      "party_name": "Saavedra"
+    },
+    {
+      "clc": "06505020",
+      "name": "Bartolomé Bavio",
+      "party_code": "06505",
+      "party_name": "Magdalena"
+    },
+    {
+      "clc": "06707060",
+      "name": "Saladillo",
+      "party_code": "06707",
+      "party_name": "Saladillo"
+    },
+    {
+      "clc": "06007010",
+      "name": "Carhué",
+      "party_code": "06007",
+      "party_name": "Adolfo Alsina"
+    },
+    {
+      "clc": "06287010",
+      "name": "General Alvear",
+      "party_code": "06287",
+      "party_name": "General Alvear"
+    },
+    {
+      "clc": "06266160",
+      "name": "Torres",
+      "party_code": "06266",
+      "party_name": "Exaltación de la Cruz"
+    },
+    {
+      "clc": "06826040",
+      "name": "30 de Agosto",
+      "party_code": "06826",
+      "party_name": "Trenque Lauquen"
+    },
+    {
+      "clc": "06742030",
+      "name": "San Cayetano",
+      "party_code": "06742",
+      "party_name": "San Cayetano"
+    },
+    {
+      "clc": "06385030",
+      "name": "Los Toldos",
+      "party_code": "06385",
+      "party_name": "General Viamonte"
+    },
+    {
+      "clc": "06728040",
+      "name": "San Andrés de Giles",
+      "party_code": "06728",
+      "party_name": "San Andrés de Giles"
+    },
+    {
+      "clc": "06595110",
+      "name": "Sierras Bayas",
+      "party_code": "06595",
+      "party_name": "Olavarría"
+    },
+    {
+      "clc": "06336020",
+      "name": "General Lavalle",
+      "party_code": "06336",
+      "party_name": "General Lavalle"
+    },
+    {
+      "clc": "06518020",
+      "name": "General Pirán",
+      "party_code": "06518",
+      "party_name": "Mar Chiquita"
+    },
+    {
+      "clc": "06412010",
+      "name": "José C. Paz",
+      "party_code": "06412",
+      "party_name": "José C. Paz"
+    },
+    {
+      "clc": "06196010",
+      "name": "Coronel Pringles",
+      "party_code": "06196",
+      "party_name": "Coronel Pringles"
+    },
+    {
+      "clc": "06112040",
+      "name": "Eduardo O'Brien",
+      "party_code": "06112",
+      "party_name": "Bragado"
+    },
+    {
+      "clc": "06525005",
+      "name": "Barrio Lisandro de La Torre y Santa Marta",
+      "party_code": "06525",
+      "party_name": "Marcos Paz"
+    },
+    {
+      "clc": "06665030",
+      "name": "Pérez Millán",
+      "party_code": "06665",
+      "party_name": "Ramallo"
+    },
+    {
+      "clc": "06672010",
+      "name": "Rauch",
+      "party_code": "06672",
+      "party_name": "Rauch"
+    },
+    {
+      "clc": "06525010",
+      "name": "Barrio Santa Rosa",
+      "party_code": "06525",
+      "party_name": "Marcos Paz"
+    },
+    {
+      "clc": "06277020",
+      "name": "Florentino Ameghino",
+      "party_code": "06277",
+      "party_name": "Florentino Ameghino"
+    },
+    {
+      "clc": "06182030",
+      "name": "Punta Alta",
+      "party_code": "06182",
+      "party_name": "Coronel de Marina Leonardo Rosales"
+    },
+    {
+      "clc": "06655050",
+      "name": "Verónica",
+      "party_code": "06655",
+      "party_name": "Punta Indio"
+    },
+    {
+      "clc": "06665050",
+      "name": "Villa General Savio",
+      "party_code": "06665",
+      "party_name": "Ramallo"
+    },
+    {
+      "clc": "06763010",
+      "name": "Conesa",
+      "party_code": "06763",
+      "party_name": "San Nicolás"
+    },
+    {
+      "clc": "06224050",
+      "name": "Moquehuá",
+      "party_code": "06224",
+      "party_name": "Chivilcoy"
+    },
+    {
+      "clc": "06270010",
+      "name": "Ezeiza",
+      "party_code": "06270",
+      "party_name": "Ezeiza"
+    },
+    {
+      "clc": "06021030",
+      "name": "Mechita",
+      "party_code": "06021",
+      "party_name": "Alberti"
+    },
+    {
+      "clc": "06819040",
+      "name": "Tornquist",
+      "party_code": "06819",
+      "party_name": "Tornquist"
+    },
+    {
+      "clc": "06231030",
+      "name": "Daireaux",
+      "party_code": "06231",
+      "party_name": "Daireaux"
+    },
+    {
+      "clc": "06462040",
+      "name": "Juan Bautista Alberdi",
+      "party_code": "06462",
+      "party_name": "Leandro N. Alem"
+    },
+    {
+      "clc": "06469100",
+      "name": "Roberts",
+      "party_code": "06469",
+      "party_name": "Lincoln"
+    },
+    {
+      "clc": "06203050",
+      "name": "Huanguelén",
+      "party_code": "06203",
+      "party_name": "Coronel Suárez"
+    },
+    {
+      "clc": "06427010",
+      "name": "La Matanza",
+      "party_code": "06427",
+      "party_name": "La Matanza"
+    },
+    {
+      "clc": "06602070",
+      "name": "Villalonga",
+      "party_code": "06602",
+      "party_name": "Patagones"
+    },
+    {
+      "clc": "06630010",
+      "name": "Pila",
+      "party_code": "06630",
+      "party_name": "Pila"
+    },
+    {
+      "clc": "06294050",
+      "name": "General Arenales",
+      "party_code": "06294",
+      "party_name": "General Arenales"
+    },
+    {
+      "clc": "06007080",
+      "name": "Rivera",
+      "party_code": "06007",
+      "party_name": "Adolfo Alsina"
+    },
+    {
+      "clc": "06399020",
+      "name": "Casbas",
+      "party_code": "06399",
+      "party_name": "Guaminí"
+    },
+    {
+      "clc": "06252010",
+      "name": "Escobar",
+      "party_code": "06252",
+      "party_name": "Escobar"
+    },
+    {
+      "clc": "06112020",
+      "name": "Bragado",
+      "party_code": "06112",
+      "party_name": "Bragado"
+    },
+    {
+      "clc": "06399040",
+      "name": "Guaminí",
+      "party_code": "06399",
+      "party_name": "Guaminí"
+    },
+    {
+      "clc": "06035010",
+      "name": "Avellaneda",
+      "party_code": "06035",
+      "party_name": "Avellaneda"
+    },
+    {
+      "clc": "06826050",
+      "name": "Trenque Lauquen",
+      "party_code": "06826",
+      "party_name": "Trenque Lauquen"
+    },
+    {
+      "clc": "06735020",
+      "name": "San Antonio de Areco",
+      "party_code": "06735",
+      "party_name": "San Antonio de Areco"
+    },
+    {
+      "clc": "06260010",
+      "name": "Esteban Echeverría",
+      "party_code": "06260",
+      "party_name": "Esteban Echeverría"
+    },
+    {
+      "clc": "06574030",
+      "name": "Navarro",
+      "party_code": "06574",
+      "party_name": "Navarro"
+    },
+    {
+      "clc": "06539010",
+      "name": "Merlo",
+      "party_code": "06539",
+      "party_name": "Merlo"
+    },
+    {
+      "clc": "06351020",
+      "name": "General Pinto",
+      "party_code": "06351",
+      "party_name": "General Pinto"
+    },
+    {
+      "clc": "06595120",
+      "name": "Villa Alfredo Fortabat - Villa La Serranía",
+      "party_code": "06595",
+      "party_name": "Olavarría"
+    },
+    {
+      "clc": "06134070",
+      "name": "Uribelarrea",
+      "party_code": "06134",
+      "party_name": "Cañuelas"
+    },
+    {
+      "clc": "06770060",
+      "name": "Santa Lucía",
+      "party_code": "06770",
+      "party_name": "San Pedro"
+    },
+    {
+      "clc": "06455030",
+      "name": "Las Flores",
+      "party_code": "06455",
+      "party_name": "Las Flores"
+    },
+    {
+      "clc": "06602060",
+      "name": "Stroeder",
+      "party_code": "06602",
+      "party_name": "Patagones"
+    },
+    {
+      "clc": "06833020",
+      "name": "Claromecó",
+      "party_code": "06833",
+      "party_name": "Tres Arroyos"
+    },
+    {
+      "clc": "06119020",
+      "name": "Barrio Las Golondrinas",
+      "party_code": "06119",
+      "party_name": "Brandsen"
+    },
+    {
+      "clc": "06105060",
+      "name": "San Carlos de Bolívar",
+      "party_code": "06105",
+      "party_name": "Bolívar"
+    },
+    {
+      "clc": "06140010",
+      "name": "Capitán Sarmiento",
+      "party_code": "06140",
+      "party_name": "Capitán Sarmiento"
+    },
+    {
+      "clc": "06854060",
+      "name": "Norberto de la Riestra",
+      "party_code": "06854",
+      "party_name": "25 de Mayo"
+    },
+    {
+      "clc": "06301010",
+      "name": "General Belgrano",
+      "party_code": "06301",
+      "party_name": "General Belgrano"
+    },
+    {
+      "clc": "06476030",
+      "name": "Lobería",
+      "party_code": "06476",
+      "party_name": "Lobería"
+    },
+    {
+      "clc": "06875025",
+      "name": "Country Club Los Médanos",
+      "party_code": "06875",
+      "party_name": "Villarino"
+    },
+    {
+      "clc": "06154010",
+      "name": "Carlos Tejedor",
+      "party_code": "06154",
+      "party_name": "Carlos Tejedor"
+    },
+    {
+      "clc": "06112080",
+      "name": "Mechita",
+      "party_code": "06112",
+      "party_name": "Bragado"
+    },
+    {
+      "clc": "06028010",
+      "name": "Almirante Brown",
+      "party_code": "06028",
+      "party_name": "Almirante Brown"
+    },
+    {
+      "clc": "06462050",
+      "name": "Leandro N. Alem",
+      "party_code": "06462",
+      "party_name": "Leandro N. Alem"
+    },
+    {
+      "clc": "06568010",
+      "name": "Morón",
+      "party_code": "06568",
+      "party_name": "Morón"
+    },
+    {
+      "clc": "06091010",
+      "name": "Berazategui",
+      "party_code": "06091",
+      "party_name": "Berazategui"
+    },
+    {
+      "clc": "06581030",
+      "name": "Juan N. Fernández",
+      "party_code": "06581",
+      "party_name": "Necochea"
+    },
+    {
+      "clc": "06763030",
+      "name": "General Rojo",
+      "party_code": "06763",
+      "party_name": "San Nicolás"
+    },
+    {
+      "clc": "06462060",
+      "name": "Vedia",
+      "party_code": "06462",
+      "party_name": "Leandro N. Alem"
+    },
+    {
+      "clc": "06770010",
+      "name": "Gobernador Castro",
+      "party_code": "06770",
+      "party_name": "San Pedro"
+    },
+    {
+      "clc": "06231060",
+      "name": "Salazar",
+      "party_code": "06231",
+      "party_name": "Daireaux"
+    },
+    {
+      "clc": "06602030",
+      "name": "Carmen de Patagones",
+      "party_code": "06602",
+      "party_name": "Patagones"
+    },
+    {
+      "clc": "06042010",
+      "name": "Ayacucho",
+      "party_code": "06042",
+      "party_name": "Ayacucho"
+    },
+    {
+      "clc": "06274010",
+      "name": "Florencio Varela",
+      "party_code": "06274",
+      "party_name": "Florencio Varela"
+    },
+    {
+      "clc": "06763050",
+      "name": "San Nicolás de los Arroyos",
+      "party_code": "06763",
+      "party_name": "San Nicolás"
+    },
+    {
+      "clc": "06581050",
+      "name": "Nicanor Olivera",
+      "party_code": "06581",
+      "party_name": "Necochea"
+    },
+    {
+      "clc": "06483040",
+      "name": "Lobos",
+      "party_code": "06483",
+      "party_name": "Lobos"
+    },
+    {
+      "clc": "06238010",
+      "name": "Dolores",
+      "party_code": "06238",
+      "party_name": "Dolores"
+    },
+    {
+      "clc": "06119070",
+      "name": "Jeppener",
+      "party_code": "06119",
+      "party_name": "Brandsen"
+    },
+    {
+      "clc": "06049020",
+      "name": "Azul",
+      "party_code": "06049",
+      "party_name": "Azul"
+    },
+    {
+      "clc": "06595100",
+      "name": "Sierra Chica",
+      "party_code": "06595",
+      "party_name": "Olavarría"
+    },
+    {
+      "clc": "06490010",
+      "name": "Lomas de Zamora",
+      "party_code": "06490",
+      "party_name": "Lomas de Zamora"
+    },
+    {
+      "clc": "06616030",
+      "name": "Pellegrini",
+      "party_code": "06616",
+      "party_name": "Pellegrini"
+    },
+    {
+      "clc": "06392080",
+      "name": "Piedritas",
+      "party_code": "06392",
+      "party_name": "General Villegas"
+    },
+    {
+      "clc": "06322010",
+      "name": "General La Madrid",
+      "party_code": "06322",
+      "party_name": "General La Madrid"
+    },
+    {
+      "clc": "06798020",
+      "name": "Tapalqué",
+      "party_code": "06798",
+      "party_name": "Tapalqué"
+    },
+    {
+      "clc": "06126030",
+      "name": "Campana",
+      "party_code": "06126",
+      "party_name": "Campana"
+    },
+    {
+      "clc": "06553020",
+      "name": "Monte Hermoso",
+      "party_code": "06553",
+      "party_name": "Monte Hermoso"
+    },
+    {
+      "clc": "06770040",
+      "name": "Río Tala",
+      "party_code": "06770",
+      "party_name": "San Pedro"
+    },
+    {
+      "clc": "06560010",
+      "name": "Moreno",
+      "party_code": "06560",
+      "party_name": "Moreno"
+    },
+    {
+      "clc": "06134060",
+      "name": "Barrio San Esteban - Barrio Los Pozos",
+      "party_code": "06134",
+      "party_name": "Cañuelas"
+    },
+    {
+      "clc": "06084020",
+      "name": "Benito Juárez",
+      "party_code": "06084",
+      "party_name": "Benito Juárez"
+    },
+    {
+      "clc": "06819030",
+      "name": "Sierra de la Ventana",
+      "party_code": "06819",
+      "party_name": "Tornquist"
+    },
+    {
+      "clc": "06770050",
+      "name": "San Pedro",
+      "party_code": "06770",
+      "party_name": "San Pedro"
+    },
+    {
+      "clc": "06077010",
+      "name": "Arrecifes",
+      "party_code": "06077",
+      "party_name": "Arrecifes"
+    },
+    {
+      "clc": "06408010",
+      "name": "Hurlingham",
+      "party_code": "06408",
+      "party_name": "Hurlingham"
+    },
+    {
+      "clc": "06063010",
+      "name": "Balcarce",
+      "party_code": "06063",
+      "party_name": "Balcarce"
+    },
+    {
+      "clc": "06875030",
+      "name": "Hilario Ascasubi",
+      "party_code": "06875",
+      "party_name": "Villarino"
+    },
+    {
+      "clc": "06756010",
+      "name": "San Isidro",
+      "party_code": "06756",
+      "party_name": "San Isidro"
+    },
+    {
+      "clc": "06644010",
+      "name": "Pinamar",
+      "party_code": "06644",
+      "party_name": "Pinamar"
+    },
+    {
+      "clc": "06581040",
+      "name": "Necochea ? Quequén",
+      "party_code": "06581",
+      "party_name": "Necochea"
+    },
+    {
+      "clc": "06134030",
+      "name": "Cañuelas",
+      "party_code": "06134",
+      "party_name": "Cañuelas"
+    },
+    {
+      "clc": "06497060",
+      "name": "Luján",
+      "party_code": "06497",
+      "party_name": "Luján"
+    },
+    {
+      "clc": "06098010",
+      "name": "Berisso",
+      "party_code": "06098",
+      "party_name": "Berisso"
+    },
+    {
+      "clc": "06134050",
+      "name": "Máximo Paz",
+      "party_code": "06134",
+      "party_name": "Cañuelas"
+    },
+    {
+      "clc": "06049030",
+      "name": "Cacharí",
+      "party_code": "06049",
+      "party_name": "Azul"
+    },
+    {
+      "clc": "06595070",
+      "name": "Olavarría",
+      "party_code": "06595",
+      "party_name": "Olavarría"
+    },
+    {
+      "clc": "06245010",
+      "name": "Ensenada",
+      "party_code": "06245",
+      "party_name": "Ensenada"
+    },
+    {
+      "clc": "06847020",
+      "name": "Tres Lomas",
+      "party_code": "06847",
+      "party_name": "Tres Lomas"
+    },
+    {
+      "clc": "06280010",
+      "name": "Comandante Nicanor Otamendi",
+      "party_code": "06280",
+      "party_name": "General Alvarado"
+    },
+    {
+      "clc": "06760010",
+      "name": "San Miguel",
+      "party_code": "06760",
+      "party_name": "San Miguel"
+    },
+    {
+      "clc": "06749010",
+      "name": "San Fernando",
+      "party_code": "06749",
+      "party_name": "San Fernando"
+    },
+    {
+      "clc": "06266020",
+      "name": "Capilla del Señor",
+      "party_code": "06266",
+      "party_name": "Exaltación de la Cruz"
+    },
+    {
+      "clc": "06638040",
+      "name": "Pilar",
+      "party_code": "06638",
+      "party_name": "Pilar"
+    },
+    {
+      "clc": "06084050",
+      "name": "Villa Cacique - Barker",
+      "party_code": "06084",
+      "party_name": "Benito Juárez"
+    },
+    {
+      "clc": "06882050",
+      "name": "Zárate",
+      "party_code": "06882",
+      "party_name": "Zárate"
+    },
+    {
+      "clc": "06497090",
+      "name": "Torres",
+      "party_code": "06497",
+      "party_name": "Luján"
+    },
+    {
+      "clc": "06778020",
+      "name": "San Vicente",
+      "party_code": "06778",
+      "party_name": "San Vicente"
+    },
+    {
+      "clc": "06505040",
+      "name": "Magdalena",
+      "party_code": "06505",
+      "party_name": "Magdalena"
+    },
+    {
+      "clc": "06056020",
+      "name": "Cabildo",
+      "party_code": "06056",
+      "party_name": "Bahía Blanca"
+    },
+    {
+      "clc": "06364030",
+      "name": "General Rodríguez",
+      "party_code": "06364",
+      "party_name": "General Rodríguez"
+    },
+    {
+      "clc": "06315020",
+      "name": "Divisadero",
+      "party_code": "06315",
+      "party_name": "General Juan Madariaga"
+    },
+    {
+      "clc": "06588100",
+      "name": "9 de Julio",
+      "party_code": "06588",
+      "party_name": "9 de Julio"
+    },
+    {
+      "clc": "06778030",
+      "name": "Santa Rita - San Lucas",
+      "party_code": "06778",
+      "party_name": "San Vicente"
+    },
+    {
+      "clc": "06434010",
+      "name": "Lanús",
+      "party_code": "06434",
+      "party_name": "Lanús"
+    },
+    {
+      "clc": "06119050",
+      "name": "Brandsen",
+      "party_code": "06119",
+      "party_name": "Brandsen"
+    },
+    {
+      "clc": "06420030",
+      "name": "San Clemente del Tuyú",
+      "party_code": "06420",
+      "party_name": "La Costa"
+    },
+    {
+      "clc": "06357110",
+      "name": "Mar del Plata",
+      "party_code": "06357",
+      "party_name": "General Pueyrredón"
+    },
+    {
+      "clc": "06413050",
+      "name": "Junín",
+      "party_code": "06413",
+      "party_name": "Junín"
+    },
+    {
+      "clc": "06371010",
+      "name": "General San Martín",
+      "party_code": "06371",
+      "party_name": "General San Martín"
+    },
+    {
+      "clc": "06868020",
+      "name": "Villa Gesell",
+      "party_code": "06868",
+      "party_name": "Villa Gesell"
+    },
+    {
+      "clc": "06595060",
+      "name": "Hinojo",
+      "party_code": "06595",
+      "party_name": "Olavarría"
+    },
+    {
+      "clc": "06203020",
+      "name": "Coronel Suárez",
+      "party_code": "06203",
+      "party_name": "Coronel Suárez"
+    },
+    {
+      "clc": "06329020",
+      "name": "General Las Heras",
+      "party_code": "06329",
+      "party_name": "General Las Heras"
+    },
+    {
+      "clc": "06532020",
+      "name": "Mercedes",
+      "party_code": "06532",
+      "party_name": "Mercedes"
+    },
+    {
+      "clc": "06700070",
+      "name": "Saavedra",
+      "party_code": "06700",
+      "party_name": "Saavedra"
+    },
+    {
+      "clc": "06357120",
+      "name": "Sierra de los Padres",
+      "party_code": "06357",
+      "party_name": "General Pueyrredón"
+    },
+    {
+      "clc": "06882040",
+      "name": "Lima",
+      "party_code": "06882",
+      "party_name": "Zárate"
+    },
+    {
+      "clc": "06518060",
+      "name": "Santa Clara del Mar",
+      "party_code": "06518",
+      "party_name": "Mar Chiquita"
+    },
+    {
+      "clc": "06294020",
+      "name": "Ascensión",
+      "party_code": "06294",
+      "party_name": "General Arenales"
+    },
+    {
+      "clc": "06833100",
+      "name": "Tres Arroyos",
+      "party_code": "06833",
+      "party_name": "Tres Arroyos"
+    },
+    {
+      "clc": "06805010",
+      "name": "Tigre",
+      "party_code": "06805",
+      "party_name": "Tigre"
+    },
+    {
+      "clc": "06448010",
+      "name": "Laprida",
+      "party_code": "06448",
+      "party_name": "Laprida"
+    },
+    {
+      "clc": "06266060",
+      "name": "Pavón - Barrio El Remanso - Barrio Los Pinos",
+      "party_code": "06266",
+      "party_name": "Exaltación de la Cruz"
+    },
+    {
+      "clc": "06854100",
+      "name": "25 de Mayo",
+      "party_code": "06854",
+      "party_name": "25 de Mayo"
+    },
+    {
+      "clc": "06410010",
+      "name": "Ituzaingó",
+      "party_code": "06410",
+      "party_name": "Ituzaingó"
+    },
+    {
+      "clc": "06357080",
+      "name": "Chapadmalal",
+      "party_code": "06357",
+      "party_name": "General Pueyrredón"
+    },
+    {
+      "clc": "06714060",
+      "name": "Salto",
+      "party_code": "06714",
+      "party_name": "Salto"
+    },
+    {
+      "clc": "06021010",
+      "name": "Alberti",
+      "party_code": "06021",
+      "party_name": "Alberti"
+    },
+    {
+      "clc": "06721020",
+      "name": "Salliqueló",
+      "party_code": "06721",
+      "party_name": "Salliqueló"
+    },
+    {
+      "clc": "06665040",
+      "name": "Ramallo",
+      "party_code": "06665",
+      "party_name": "Ramallo"
+    },
+    {
+      "clc": "06210020",
+      "name": "Chacabuco",
+      "party_code": "06210",
+      "party_name": "Chacabuco"
+    },
+    {
+      "clc": "06441030",
+      "name": "La Plata",
+      "party_code": "06441",
+      "party_name": "La Plata"
+    },
+    {
+      "clc": "06070010",
+      "name": "Baradero",
+      "party_code": "06070",
+      "party_name": "Baradero"
+    },
+    {
+      "clc": "06357090",
+      "name": "El Marquesado",
+      "party_code": "06357",
+      "party_name": "General Pueyrredón"
+    },
+    {
+      "clc": "06525020",
+      "name": "Marcos Paz",
+      "party_code": "06525",
+      "party_name": "Marcos Paz"
+    },
+    {
+      "clc": "06218010",
+      "name": "Chascomús",
+      "party_code": "06218",
+      "party_name": "Chascomús"
+    },
+    {
+      "clc": "06840010",
+      "name": "Tres de Febrero",
+      "party_code": "06840",
+      "party_name": "Tres de Febrero"
+    },
+    {
+      "clc": "06515010",
+      "name": "Malvinas Argentinas",
+      "party_code": "06515",
+      "party_name": "Malvinas Argentinas"
+    },
+    {
+      "clc": "06861010",
+      "name": "Vicente López",
+      "party_code": "06861",
+      "party_name": "Vicente López"
+    },
+    {
+      "clc": "06547020",
+      "name": "San Miguel del Monte",
+      "party_code": "06547",
+      "party_name": "Monte"
+    },
+    {
+      "clc": "06791050",
+      "name": "Tandil",
+      "party_code": "06791",
+      "party_name": "Tandil"
+    },
+    {
+      "clc": "06014010",
+      "name": "Adolfo Gonzales Chaves",
+      "party_code": "06014",
+      "party_name": "Adolfo Gonzales Chaves"
+    },
+    {
+      "clc": "06686060",
+      "name": "Rojas",
+      "party_code": "06686",
+      "party_name": "Rojas"
+    },
+    {
+      "clc": "06679030",
+      "name": "González Moreno",
+      "party_code": "06679",
+      "party_name": "Rivadavia"
+    },
+    {
+      "clc": "06224010",
+      "name": "Chivilcoy",
+      "party_code": "06224",
+      "party_name": "Chivilcoy"
+    },
+    {
+      "clc": "06648010",
+      "name": "Presidente Perón",
+      "party_code": "06648",
+      "party_name": "Presidente Perón"
+    },
+    {
+      "clc": "06623100",
+      "name": "Pergamino",
+      "party_code": "06623",
+      "party_name": "Pergamino"
+    },
+    {
+      "clc": "06784020",
+      "name": "Suipacha",
+      "party_code": "06784",
+      "party_name": "Suipacha"
+    },
+    {
+      "clc": "06833060",
+      "name": "Orense",
+      "party_code": "06833",
+      "party_name": "Tres Arroyos"
+    },
+    {
+      "clc": "06119040",
+      "name": "Barrio Parque Las Acacias",
+      "party_code": "06119",
+      "party_name": "Brandsen"
+    },
+    {
+      "clc": "06778010",
+      "name": "Domselaar",
+      "party_code": "06778",
+      "party_name": "San Vicente"
+    }
+  ]
+}

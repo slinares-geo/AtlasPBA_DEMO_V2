@@ -2,7 +2,7 @@
 
 ## Descripcion general
 
-Atlas Electoral PBA es una aplicacion web estatica para explorar resultados electorales de la Provincia de Buenos Aires con lectura territorial por partido y por circuito electoral. El visor combina datos electorales procesados, geometria territorial y componentes interactivos para analizar participacion, ausentismo, composicion del voto, desempeno de fuerzas politicas, competitividad y variaciones entre elecciones.
+Atlas Electoral PBA es una aplicacion web estatica para explorar resultados electorales de la Provincia de Buenos Aires con lectura territorial por partido, localidad y circuito electoral. El visor combina datos electorales procesados, geometria territorial y componentes interactivos para analizar participacion, ausentismo, composicion del voto, desempeno de fuerzas politicas, competitividad y variaciones entre elecciones.
 
 La aplicacion esta pensada como un tablero exploratorio: permite recorrer el mapa, aplicar filtros, consultar rankings, abrir un asistente de preguntas analiticas, cruzar metricas en un grafico de dispersion y exportar informacion o informes.
 
@@ -13,11 +13,14 @@ La arquitectura es de despliegue estatico. No requiere backend en tiempo de ejec
 Componentes principales:
 
 - `index.html`: estructura de la interfaz, referencias a Leaflet, estilos y modulo JavaScript principal.
-- `css/styles.css`: sistema visual, layout, paneles, mapa, rankings, asistente, modo informe y componentes superpuestos.
+- `css/styles.css` y `css/socioeconomic.css`: sistema visual, layout, paneles, mapa, rankings, asistente, modo informe y componentes superpuestos.
 - `js/app.js`: estado de la aplicacion, carga de datos, transformaciones, renderizado del mapa y controles.
-- `data/electoral_data.json`: datos electorales procesados para partidos y circuitos.
+- `data/electoral_data.json`: ocho elecciones procesadas para partidos, localidades y circuitos.
+- `data/socioeconomic_data.json`: 79 indicadores censales relativos y una población total derivada, agregados para los tres niveles territoriales.
 - `data/partidos_pba.geojson`: geometria de partidos de la Provincia de Buenos Aires.
-- `data/circuitos_pba.geojson`: geometria de circuitos electorales.
+- `data/localidades_pba_mas2000.geojson`: 219 polígonos oficiales normalizados por CLC.
+- `data/circuitos_pba.geojson`: geometria de circuitos electorales y relaciones completas con CLC.
+- `data/partidos_socioeconomicos.json`, `data/localidades_socioeconomicas.json` y `data/circuitos_socioeconomicos.json`: exportaciones independientes de métricas porcentuales.
 - `docs/`: documentacion tecnica, metodologica y auditorias de datos.
 - `tools/`: scripts de construccion y auditoria de datos.
 
@@ -74,7 +77,7 @@ El panel lateral contiene:
 
 ### Mapa
 
-El mapa usa Leaflet con capas GeoJSON para partidos y circuitos. Permite alternar nivel territorial, buscar partidos, seleccionar territorios y abrir un detalle municipal de circuitos.
+El mapa usa Leaflet con capas GeoJSON para partidos, 219 localidades oficiales y circuitos. El buscador sigue la unidad activa. El mapa flotante es un único componente parametrizado por partido o localidad; en Localidad distingue relaciones secundarias mediante trazo discontinuo.
 
 ### KPIs
 
@@ -86,7 +89,13 @@ La aplicacion incluye barras apiladas para composicion del voto total y distribu
 
 ### Ranking
 
-El ranking ordena partidos o circuitos segun la metrica activa y el criterio definido por el modo de lectura. Permite seleccionar territorios desde la lista.
+El ranking ordena partidos, localidades o circuitos segun la metrica activa y el criterio definido por el modo de lectura. Permite seleccionar territorios desde la lista y abre un perfil socioeconomico reutilizable mediante `Ver perfil`. La tabla territorial del grafico de dispersion ofrece la misma accion.
+
+### Continuidad y ventanas territoriales
+
+Continuidad genera desde los metadatos electorales un desplegable de casillas, exige dos elecciones y conserva la seleccion durante la sesion. El refresco general vuelve a calcular mapa, KPIs, leyenda, ranking, exportacion y detalle territorial. En este modo, el clic sobre un poligono actualiza el panel permanente situado bajo el mapa; fuera de Continuidad se conserva el comportamiento territorial previo.
+
+El panel de Continuidad representa cada elección mediante una barra apilada al 100 % construida con votos absolutos por fuerza sobre votos positivos. El perfil socioeconomico conserva el modal reutilizable: `Escape` cierra la ventana activa y el foco vuelve al control que la abrio.
 
 ### Asistente
 
@@ -104,7 +113,9 @@ Al inicializar, `app.js` carga en paralelo:
 
 - `data/electoral_data.json`;
 - `data/partidos_pba.geojson`;
-- `data/circuitos_pba.geojson`.
+- `data/localidades_pba_mas2000.geojson`;
+- `data/circuitos_pba.geojson`;
+- `data/socioeconomic_data.json`.
 
 ### Transformacion
 
@@ -121,7 +132,7 @@ El renderizado se actualiza desde una funcion de refresco general que sincroniza
 ## Componentes principales de JavaScript
 
 - `state`: objeto central con mapa, datos, seleccion territorial, filtros activos y caches.
-- `METRICS`, `SCATTER_METRICS` y `QUESTIONS`: configuraciones declarativas de metricas, cruces y preguntas.
+- `METRICS`, `SCATTER_METRICS`, `SCATTER_ELECTORAL_METRICS`, `PROFILE_MAIN_INDICATORS`, `SOCIO_DIMENSIONS`, `SOCIO_FAMILIES` y `QUESTIONS`: configuraciones declarativas de metricas, capa de presentación, familias socioeconómicas, perfil y preguntas.
 - Funciones de formato: porcentajes, puntos porcentuales y numeros.
 - Funciones de acceso a datos: recuperan filas por unidad y eleccion.
 - Funciones de metrica: calculan valores actuales, variaciones y valores de ranking.
@@ -182,3 +193,17 @@ Los datos electorales y cartograficos se almacenan localmente en `data/`. Esto e
 - Incorporar capas socioeconomicas o censales.
 - Agregar busqueda avanzada y filtros territoriales combinados.
 - Publicar una guia de actualizacion de datos paso a paso.
+
+## Canal de construcción reproducible
+
+- `tools/build_data.py` descubre y procesa los CSV DINE, deriva el CLC principal de cada circuito desde radios y población 2022, valida cierres y genera los JSON/GeoJSON electorales.
+- `tools/xlsx_reader.py` realiza lectura incremental de XLSX sin requerir Excel.
+- `tools/build_socioeconomic.py` valida el universo de 23.880 radios, agrega circuito mediante radio–circuito y localidad mediante CLC radio–localidad, deriva población total y genera los tres JSON socioeconómicos finales.
+- `tools/radio_locality.py` clasifica circuitos con CLC único, sin localidad urbana o multilocalidad; en este último caso usa la población 2022 y genera la auditoría reproducible.
+- `tools/audit_data.py` y `tools/audit_socioeconomic.py` generan reportes JSON y Markdown y detienen el proceso ante discrepancias críticas.
+
+El dataset socioeconómico declara procedencia, año, universo, numerador, denominador, método y controles de cierre por variable. La capa de presentación del navegador separa variable conceptual, categoría, nombre corto y definición completa sin alterar los nombres de fuente. La aplicación carga los cuatro recursos de datos en paralelo. El gráfico de dispersión admite cambios electorales, métricas de una elección e indicadores censales en cualquiera de los ejes; calcula r de Pearson y R² solo con casos completos y exporta todas las observaciones a CSV.
+
+## Excepciones controladas
+
+La relación radio-circuito es provisional porque fue construida con centroides de radio. El auditor exige que las cuatro asignaciones interpartidarias conocidas y los cuatro circuitos sin radio coincidan exactamente con el inventario aprobado. Los radios interpartidarios se excluyen al elegir la localidad principal. La fuente radio–localidad debe cerrar en 23.880 radios, 19.967 CLC no nulos, 3.913 nulos y 219 localidades oficiales; cualquier diferencia cambia el estado de auditoría a crítico.

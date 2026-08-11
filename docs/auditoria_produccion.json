@@ -1,0 +1,94 @@
+{
+  "generated_at": "2026-08-10T22:46:17",
+  "status": "ok",
+  "issues": [],
+  "warnings": [
+    "Recursos mayores a 10 MB sin comprimir: electoral_data.json=10.91 MB, partidos_pba.geojson=15.40 MB",
+    "La ejecución depende de Leaflet 1.9.4 en unpkg y del mapa base Argenmap del IGN; requiere conectividad externa."
+  ],
+  "summary": {
+    "html_ids": 98,
+    "missing_dom_ids": [],
+    "initial_fetches": [
+      "data/electoral_data.json",
+      "data/socioeconomic_data.json",
+      "data/partidos_pba.geojson",
+      "data/localidades_pba_mas2000.geojson",
+      "data/circuitos_pba.geojson"
+    ],
+    "geometry": {
+      "partidos_pba.geojson": {
+        "features": 135,
+        "invalid": 0,
+        "empty": 0,
+        "repaired": []
+      },
+      "localidades_pba_mas2000.geojson": {
+        "features": 219,
+        "invalid": 0,
+        "empty": 0,
+        "repaired": [
+          "06644010"
+        ]
+      },
+      "circuitos_pba.geojson": {
+        "features": 1153,
+        "invalid": 0,
+        "empty": 0,
+        "repaired": [
+          "19"
+        ]
+      }
+    },
+    "localities": 219,
+    "localities_with_electoral_data": 206,
+    "secondary_only_localities": 13,
+    "multi_locality_circuits": 16,
+    "secondary_relations": 18,
+    "socioeconomic_variables": 80,
+    "export_counts": {
+      "partido": 135,
+      "localidad": 219,
+      "circuito": 1153
+    },
+    "circuits_without_socioeconomic_data": 4,
+    "local_absolute_references": 0,
+    "console_logs": 0,
+    "duplicate_listener_lines": 0,
+    "responsive_breakpoints": {
+      "1180": true,
+      "720": true,
+      "480": true
+    },
+    "data_file_sizes_bytes": {
+      "circuitos_pba.geojson": 7085553,
+      "circuitos_socioeconomicos.json": 2282174,
+      "electoral_data.json": 10914046,
+      "localidades_pba_mas2000.geojson": 2173688,
+      "localidades_pba_mas2000.json": 30311,
+      "localidades_socioeconomicas.json": 458951,
+      "partidos_pba.geojson": 15396643,
+      "partidos_socioeconomicos.json": 301434,
+      "socioeconomic_data.json": 5489124
+    },
+    "large_resources": {
+      "electoral_data.json": 10914046,
+      "partidos_pba.geojson": 15396643
+    },
+    "functional_guards": {
+      "official_locality_layer": true,
+      "generic_drawer": true,
+      "secondary_style": true,
+      "stale_drawer_guard": true,
+      "fetch_status_check": true,
+      "no_data_state": true,
+      "unit_search": true
+    },
+    "dynamic_dom_ids": [
+      "competitivenessInfo"
+    ]
+  },
+  "qa_limits": [
+    "La inspección visual automatizada en navegador no pudo ejecutarse por un error del entorno aislado de Windows; se sustituyó por validación HTTP, DOM, sintaxis, datos y geometrías."
+  ]
+}

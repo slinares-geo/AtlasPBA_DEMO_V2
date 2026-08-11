@@ -100,9 +100,9 @@ El ranking ordena territorios segun la metrica activa y el modo de analisis. Pue
 
 El ranking es una herramienta de priorizacion exploratoria. No implica causalidad ni jerarquía politica por fuera de la métrica elegida.
 
-## Vista Partido/Circuito
+## Vista Partido/Localidad/Circuito
 
-La vista Partido permite una lectura agregada y comparable entre municipios. La vista Circuito permite una lectura mas fina y localizada. Cambiar de vista modifica la unidad de calculo, el mapa, el ranking y la interpretacion territorial de los indicadores.
+La vista Partido permite una lectura agregada y comparable entre municipios. La vista Localidad suma los circuitos según su CLC principal derivado desde radios censales y los representa mediante sus polígonos de circuito; no se construyen polígonos nuevos. La vista Circuito permite una lectura mas fina y localizada. Cambiar de vista modifica la unidad de calculo, el mapa, el ranking y la interpretacion territorial de los indicadores.
 
 ## Como leer el atlas
 
@@ -110,7 +110,7 @@ La vista Partido permite una lectura agregada y comparable entre municipios. La 
 2. Elegir la elección objetivo y, si corresponde, la eleccion base.
 3. Definir que indicador mostrar en el mapa.
 4. Si se analiza voto por fuerza o tipo de voto, ajustar los controles dependientes.
-5. Alternar entre Partido y Circuito segun el nivel de detalle requerido.
+5. Alternar entre Partido, Localidad y Circuito segun el nivel de detalle requerido.
 6. Usar el mapa para ubicar patrones territoriales y el ranking para priorizar casos.
 7. Revisar KPIs, composicion del voto y lectura rapida para contextualizar.
 8. Usar el asistente para activar preguntas analiticas frecuentes.
@@ -128,6 +128,30 @@ La vista Partido permite una lectura agregada y comparable entre municipios. La 
 
 - Combinar porcentajes con volumen de electores.
 - Revisar participación y ausentismo antes de interpretar cambios de voto.
-- Comparar patrones entre Partido y Circuito para distinguir tendencias agregadas de heterogeneidad interna.
+- Comparar patrones entre Partido, Localidad y Circuito para distinguir tendencias agregadas de heterogeneidad interna.
 - Usar la distancia a primera fuerza solo en territorios donde la fuerza seleccionada no lidera.
 - Tratar los territorios sin dato como casos a revisar, no como evidencia sustantiva.
+
+## Continuidad y alternancia electoral
+
+La clasificación utiliza dos o más elecciones seleccionadas y analiza al peronismo/K. La lista se construye desde los metadatos electorales, conserva elecciones diferentes del mismo año y se recalcula sin botón de aplicación. Para cada territorio se identifica si el peronismo gana siempre, pierde siempre, alterna entre victorias y derrotas, participa de un empate en el primer puesto o tiene datos incompletos. Un faltante nunca se interpreta como derrota. La categoría de empate solo se aplica cuando el peronismo integra el empate por el primer puesto; los ganadores se determinan con los votos agregados originales, no con porcentajes redondeados.
+
+El detalle territorial presenta, para cada elección seleccionada, la distribución completa de votos positivos entre las fuerzas efectivamente participantes. Los porcentajes se calculan después de agregar votos absolutos del territorio y cada barra cierra en 100 % salvo redondeo. La clasificación continúa dependiendo de si el peronismo resulta ganador; no se usa esa clasificación para reemplazar los nombres históricos de las fuerzas.
+
+## Indicadores socioeconómicos y cruces
+
+El consolidado final contiene 79 indicadores relativos del Censo Nacional de Población, Hogares y Viviendas 2022 y una variable derivada de población total. Los cuatro grupos de edad son mutuamente excluyentes y exhaustivos y su suma coincide exactamente con Totaledad. El diccionario declara para cada variable nombre, descripción, fuente, año, universo, unidad y método de agregación. Las proporciones se calculan como ratio de sumas —suma de numeradores dividida por suma de denominadores— y no como promedio simple de porcentajes.
+
+El enlace territorial parte del radio censal. Los circuitos se obtienen de la correspondencia radio–circuito; las localidades, directamente del CLC radio–localidad; y los partidos, del código territorial del radio. Los cruces excluyen observaciones incompletas, requieren al menos tres casos y muestran el coeficiente r de Pearson y R². Son asociaciones exploratorias y no implican causalidad.
+
+Cada fila de ranking y la tabla de cruces permiten abrir una ficha socioeconómica del territorio. El resumen usa cuatro indicadores configurados de forma centralizada: población total, desocupación, NBI por vivienda inconveniente y ausencia de cobertura de salud. Los gráficos iniciales agrupan categorías por familia conceptual y consumen los agregados precalculados; el explorador separa dimensión e indicador y conserva la definición completa en el detalle metodológico.
+
+Las matrices completas permiten auditar 14 distribuciones exhaustivas: grupos de edad, migración, clima educativo clasificable, acceso digital, NBI de vivienda, cobertura de salud, jubilación, actividad, categoría y rama ocupacional, tipo y tenencia de vivienda, hacinamiento y calidad de materiales. Cada distribución cierra en 100 % dentro de 0,01 puntos porcentuales. Clima educativo usa como denominador los hogares clasificables; los casos No corresponde, faltantes y no aplicables se conservan en el control de fuente, pero no se mezclan con la distribución sustantiva.
+
+## Calidad y limitaciones de la correspondencia radio-circuito
+
+La tabla operativa `Circuitos_Radios_uno_a_muchos.xlsx` asigna cada radio a un circuito mediante el centroide del radio y se considera provisional hasta su corrección. Se conservan cuatro asignaciones interpartidarias conocidas: radios 067600613, 067601310 y 067601311 al circuito 668A, y radio 067001004 al circuito 954. Los circuitos 128, 313, 338B y 548 no tienen radios censales asociados y permanecen sin indicadores; no se imputan valores.
+
+La fuente radio–localidad contiene 19.967 radios con CLC urbano y 3.913 con CLC nulo: una cobertura de 83,61% del universo de 23.880 radios. Los nulos corresponden al territorio fuera de las localidades censales de más de 2.000 habitantes. Para resultados electorales, un circuito con un solo CLC se asigna directamente; si contiene varios, se elige como principal el de mayor población 2022. Una participación de al menos 70% se clasifica con confianza alta y entre 55% y 69,99% con confianza media. Las relaciones secundarias se conservan completas para el mapa flotante, pero no reciben una fracción de votos porque los resultados no están disponibles por radio.
+
+La vista Localidad utiliza los 219 polígonos oficiales normalizados por CLC. Las 13 localidades sin circuito principal permanecen visibles y muestran sus circuitos compartidos con una advertencia explícita sobre la asignación única de votos. En la salida web se reparan dos bucles geométricos degenerados comprobados —CLC 06644010 y circuito 19— sin modificar las fuentes originales.

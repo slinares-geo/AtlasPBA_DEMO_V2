@@ -6,7 +6,8 @@
     <title>Atlas Electoral PBA</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="css/styles.css?v=05-csv-20" />
+    <link rel="stylesheet" href="css/styles.css?v=atlas-20260811-1" />
+    <link rel="stylesheet" href="css/socioeconomic.css?v=atlas-20260808-8" />
   </head>
   <body>
     <div class="app-shell">
@@ -23,12 +24,13 @@
 
           <div class="map-tools" aria-label="Herramientas del mapa">
             <div class="map-search">
-              <input id="mapSearchInput" type="search" placeholder="Buscar partido" autocomplete="off" aria-label="Buscar partido">
+              <input id="mapSearchInput" type="search" placeholder="Buscar partido" autocomplete="off" aria-label="Buscar unidad territorial">
               <div class="map-search-results is-hidden" id="mapSearchResults"></div>
             </div>
             <div class="map-level-switch" aria-label="Nivel geografico">
-              <button id="mapLevelParty" class="is-active" type="button">Partido</button>
-              <button id="mapLevelCircuit" type="button">Circuito</button>
+              <button id="mapLevelParty" class="is-active" type="button" aria-pressed="true">Partido</button>
+              <button id="mapLevelLocality" type="button" aria-pressed="false">Localidad</button>
+              <button id="mapLevelCircuit" type="button" aria-pressed="false">Circuito</button>
             </div>
           </div>
 
@@ -49,18 +51,19 @@
 
           <div class="legend" id="legend"></div>
 
-          <section class="circuit-drawer is-hidden" id="circuitDrawer" aria-label="Mapa interno de circuitos">
+          <section class="circuit-drawer is-hidden" id="circuitDrawer" aria-label="Mapa flotante de circuitos relacionados">
           <div class="drawer-head">
             <div>
-              <span>Detalle municipal</span>
-              <strong id="drawerTitle">Selecciona un partido</strong>
+              <span id="drawerKicker">Detalle territorial</span>
+              <strong id="drawerTitle">Selecciona un territorio</strong>
             </div>
             <div class="drawer-actions">
-              <button id="pinParty" type="button">Fijar</button>
+              <button id="pinDrawer" type="button">Fijar</button>
               <button id="closeDrawer" type="button">Cerrar</button>
             </div>
           </div>
-          <div id="circuitMap" aria-label="Circuitos electorales del partido seleccionado"></div>
+          <div class="drawer-note is-hidden" id="drawerNote" role="status"></div>
+          <div id="circuitMap" aria-label="Circuitos electorales relacionados con el territorio seleccionado"></div>
           </section>
         </section>
 
@@ -76,6 +79,7 @@
             <div class="vote-stack" id="voteStack"></div>
             <div class="vote-stack-legend" id="voteStackLegend"></div>
           </section>
+          <section class="continuity-detail is-hidden" id="continuityDetail" aria-live="polite" aria-label="Detalle territorial de Continuidad"></section>
         </section>
       </main>
 
@@ -114,7 +118,7 @@
               <select id="compareElection"></select>
             </label>
 
-            <label>
+            <label class="indicator-filter">
               Qué mostrar en el mapa
               <select id="indicator"></select>
             </label>
@@ -148,7 +152,60 @@
             <div class="panel-actions" aria-label="Accesos">
               <button id="openQuestions" type="button">Asistente</button>
               <button id="openScatter" type="button">Cruzar metricas</button>
+              <button id="openContinuity" type="button" aria-pressed="false">Continuidad</button>
             </div>
+
+            <section class="continuity-controls is-hidden" id="continuityControls" aria-label="Continuidad y alternancia electoral">
+              <div class="continuity-head">
+                <div><span>Analisis temporal</span><strong>Continuidad y alternancia</strong></div>
+                <button id="closeContinuity" type="button">Cerrar</button>
+              </div>
+              <label>
+                Unidad territorial
+                <select id="continuityUnit">
+                  <option value="party">Partido</option>
+                  <option value="locality">Localidad</option>
+                  <option value="circuit">Circuito</option>
+                </select>
+              </label>
+              <div class="continuity-election-picker">
+                <span class="continuity-field-label">Elecciones seleccionadas</span>
+                <button id="continuityElectionToggle" class="continuity-election-toggle" type="button" aria-expanded="false" aria-controls="continuityElectionMenu">Seleccionar elecciones</button>
+                <div class="continuity-election-menu" id="continuityElectionMenu" hidden>
+                  <label class="continuity-election-all">
+                    <input id="continuityAllCheckbox" type="checkbox">
+                    <span>Seleccionar todas</span>
+                  </label>
+                  <div id="continuityElections" class="continuity-election-options" role="group" aria-describedby="continuitySelectionCount continuityValidation"></div>
+                </div>
+              </div>
+              <div class="continuity-selection-tools" role="group" aria-label="Acciones de selección de elecciones">
+                <button id="continuitySelectAll" type="button">Seleccionar todas</button>
+                <button id="continuityClearAll" type="button">Deseleccionar todas</button>
+                <span id="continuitySelectionCount" aria-live="polite"></span>
+              </div>
+              <p class="continuity-validation is-hidden" id="continuityValidation" role="status">Seleccione al menos dos elecciones para analizar la continuidad.</p>
+              <label class="continuity-force-field" hidden>
+                Bloque analizado
+                <select id="continuityForce">
+                  <option value="PERONISMO_K">Peronismo/K</option>
+                  <option value="LLA">La Libertad Avanza</option>
+                </select>
+              </label>
+              <label>
+                Categoria
+                <select id="continuityCategory">
+                  <option value="all">Todas</option>
+                  <option value="always_win">Siempre gana</option>
+                  <option value="always_lose">Siempre pierde</option>
+                  <option value="alternation">Alternancia</option>
+                  <option value="tie">Empate o sin definicion</option>
+                  <option value="incomplete">Datos incompletos</option>
+                </select>
+              </label>
+              <div class="continuity-summary" id="continuitySummary"></div>
+
+            </section>
 
             <div class="panel-actions export-actions" aria-label="Exportacion">
               <button id="exportData" type="button">Exportar CSV</button>
@@ -210,6 +267,7 @@
             Unidad
             <select id="scatterUnit">
               <option value="party">Partido</option>
+              <option value="locality">Localidad</option>
               <option value="circuit">Circuito</option>
             </select>
           </label>
@@ -222,6 +280,17 @@
             <select id="scatterY"></select>
           </label>
           <label>
+            Elección de referencia
+            <select id="scatterElection"></select>
+          </label>
+          <label>
+            Fuerza electoral
+            <select id="scatterForce">
+              <option value="PERONISMO_K">Peronismo/K</option>
+              <option value="LLA">La Libertad Avanza</option>
+            </select>
+          </label>
+          <label>
             Seleccion
             <select id="scatterMode">
               <option value="highlight">Resaltar</option>
@@ -229,14 +298,32 @@
             </select>
           </label>
         </div>
+        <p class="scatter-meta" id="scatterMeta"></p>
         <div class="scatter-chart-wrap">
           <svg id="scatterChart" role="img" aria-label="Grafico de dispersion"></svg>
         </div>
         <div class="scatter-stats" id="scatterStats"></div>
+        <div class="scatter-table" id="scatterTable"></div>
         <div class="scatter-actions">
           <button id="clearScatterSelection" type="button">Limpiar seleccion</button>
+          <button id="exportScatter" type="button">Exportar cruce CSV</button>
           <span>Asociacion exploratoria. No implica causalidad.</span>
         </div>
+      </section>
+
+
+      <section class="territory-modal" id="territoryModal" role="dialog" aria-modal="true" aria-labelledby="territoryModalTitle" hidden>
+        <button class="territory-modal-backdrop" type="button" data-territory-close aria-label="Cerrar ventana territorial"></button>
+        <article class="territory-modal-panel" id="territoryModalPanel" tabindex="-1">
+          <header class="territory-modal-head">
+            <div>
+              <span id="territoryModalKicker">Detalle territorial</span>
+              <h2 id="territoryModalTitle">Territorio</h2>
+            </div>
+            <button id="closeTerritoryModal" type="button" aria-label="Cerrar ventana territorial">Cerrar</button>
+          </header>
+          <div class="territory-modal-content" id="territoryModalContent"></div>
+        </article>
       </section>
 
       <div class="loading" id="loading">Preparando visor territorial...</div>
@@ -259,6 +346,7 @@
             <p>El alcance territorial es la Provincia de Buenos Aires. La aplicación integra información electoral y cartográfica para representar resultados en el territorio provincial.</p>
             <ul>
               <li><strong>Partido:</strong> lectura agregada a nivel municipal para comparar desempeños generales y peso electoral.</li>
+              <li><strong>Localidad:</strong> agregación electoral de circuitos según el CLC principal de sus radios censales. El mapa muestra los 219 polígonos oficiales; al seleccionar uno, el mapa flotante presenta sus circuitos principales y compartidos.</li>
               <li><strong>Circuito electoral:</strong> lectura más detallada para identificar heterogeneidad interna dentro de los partidos.</li>
             </ul>
 
@@ -267,6 +355,9 @@
               <li>DINE / resultados electorales: <a href="https://www.argentina.gob.ar/dine/resultados-electorales" target="_blank" rel="noreferrer">ACCEDER</a></li>
               <li>Cartografía de partidos de Provincia de Buenos Aires desde datos abiertos: <a href="https://portalgeoestadistico.indec.gob.ar/" target="_blank" rel="noreferrer">ACCEDER</a></li>
               <li>Cartografía digital de Circuitos Electorales de Buenos Aires, Cámara Nacional Electoral: <a href="https://mapa2.electoral.gov.ar/descargas/" target="_blank" rel="noreferrer">ACCEDER</a></li>
+              <li>INDEC / Censo Nacional de Población, Hogares y Viviendas 2022, agregado desde radios censales.</li>
+              <li>Correspondencia radio–localidad urbana mediante código CLC; los CLC nulos quedan fuera de localidades de más de 2.000 habitantes.</li>
+              <li>Polígonos oficiales de las 219 localidades censales bonaerenses de más de 2.000 habitantes.</li>
             </ul>
             <p>La aplicación integra datos electorales y cartográficos. Los resultados electorales se procesan para construir indicadores por unidad territorial y las capas cartográficas permiten representarlos espacialmente.</p>
 
@@ -288,13 +379,17 @@
             <h3>Comparación temporal y ranking</h3>
             <p>La comparación temporal toma una elección base y una elección objetivo. Para cada métrica comparable, calcula la diferencia entre ambos momentos en la misma unidad territorial. El ranking ordena territorios según la métrica activa y el modo de análisis: mayor a menor, menor a mayor o intensidad absoluta del cambio.</p>
 
+            <h3>Continuidad y cruces socioelectorales</h3>
+            <p>La continuidad clasifica una fuerza en dos o más elecciones; los faltantes se marcan como incompletos y nunca como derrotas. Los indicadores censales 2022 se agregan mediante ratio de sumas cuando son proporciones. El cruce muestra r de Pearson y R² solo con observaciones completas y no implica causalidad.</p>
+            <p>La correspondencia radio–circuito es provisional y fue construida por centroide de radio. Cuatro asignaciones interpartidarias quedan señaladas y se excluyen de la clasificación de localidad. Los circuitos con un CLC único se asignan directamente; los multilocalidad se clasifican por la población 2022 de sus radios. Las relaciones secundarias se conservan para el mapa flotante, pero los votos se asignan una sola vez a la localidad principal. Los circuitos 128, 313, 338B y 548 permanecen sin radios, sin imputación.</p>
+
             <h3>Cómo leer el atlas</h3>
             <ul>
               <li>Seleccionar si se desea analizar una elección o comparar dos elecciones.</li>
               <li>Elegir la elección objetivo y, si corresponde, la elección base.</li>
               <li>Definir qué indicador mostrar en el mapa.</li>
               <li>Si se analiza voto por fuerza o tipo de voto, ajustar los controles dependientes.</li>
-              <li>Alternar entre Partido y Circuito según el nivel de detalle requerido.</li>
+              <li>Alternar entre Partido, Localidad y Circuito según el nivel de detalle requerido.</li>
               <li>Usar el mapa para identificar patrones territoriales y el ranking para priorizar casos de interés.</li>
               <li>Revisar los KPIs, la composición del voto y la lectura rápida para contextualizar los resultados.</li>
               <li>Utilizar el asistente para explorar preguntas analíticas frecuentes.</li>
@@ -310,6 +405,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/app.js?v=05-csv-29" type="module"></script>
+    <script src="js/app.js?v=atlas-20260811-2" type="module"></script>
   </body>
 </html>
