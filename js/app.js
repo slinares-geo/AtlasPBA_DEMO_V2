@@ -229,6 +229,34 @@ const QUESTIONS = [
     scatter: { unit: "current", x: "socio:hacin_6P", y: "electoral:participacion", mode: "highlight" },
   },
   {
+    id: "socio-clima-alto-peronismo",
+    group: "Cruces socioelectorales",
+    label: "Clima educativo alto (%)",
+    description: "Cruza la proporción de hogares con clima educativo alto del Censo 2022 con el voto peronista de la elección seleccionada.",
+    mode: "target",
+    indicator: "votos",
+    voteType: "positivo",
+    positiveMeasure: "share_positive",
+    force: "PERONISMO_K",
+    sort: "desc",
+    unit: "current",
+    scatter: { unit: "current", x: "socio:eduhog4P", y: "electoral:fuerza", force: "PERONISMO_K", mode: "highlight" },
+  },
+  {
+    id: "socio-ocupados-peronismo",
+    group: "Cruces socioelectorales",
+    label: "Condición de actividad (ocupados %)",
+    description: "Cruza la proporción de población ocupada del Censo 2022 con el voto peronista de la elección seleccionada.",
+    mode: "target",
+    indicator: "votos",
+    voteType: "positivo",
+    positiveMeasure: "share_positive",
+    force: "PERONISMO_K",
+    sort: "desc",
+    unit: "current",
+    scatter: { unit: "current", x: "socio:condac_1P", y: "electoral:fuerza", force: "PERONISMO_K", mode: "highlight" },
+  },
+  {
     id: "predominio-territorial",
     group: "Distribución territorial",
     label: "¿Qué fuerzas predominan?",
@@ -3076,6 +3104,14 @@ function scatterMetric(value) {
   };
 }
 
+function compareScatterSocioeconomicVariables(a, b) {
+  const climateFamily = "educational_climate";
+  if (a.family?.id === climateFamily && b.family?.id === climateFamily) {
+    return a.family.codes.indexOf(a.id) - b.family.codes.indexOf(b.id);
+  }
+  return a.short_name.localeCompare(b.short_name, "es");
+}
+
 function setupScatterOptions() {
   const changes = SCATTER_METRICS.map((metric) => `<option value="${metric.value}">${escapeHtml(metric.label)}</option>`).join("");
   const electoral = SCATTER_ELECTORAL_METRICS.map((metric) => `<option value="${metric.value}">${escapeHtml(metric.label)}</option>`).join("");
@@ -3087,7 +3123,7 @@ function setupScatterOptions() {
   }, new Map());
   const socioeconomic = [...byGroup.entries()].map(([group, variables]) => `
     <optgroup label="Censo 2022 · ${escapeHtml(group)}">
-      ${variables.sort((a, b) => a.short_name.localeCompare(b.short_name, "es")).map((variable) => `<option value="socio:${escapeHtml(variable.id)}" title="${escapeHtml(variable.descripcion || variable.short_name)}">${escapeHtml(scatterSocioeconomicLabel(variable))}</option>`).join("")}
+      ${variables.sort(compareScatterSocioeconomicVariables).map((variable) => `<option value="socio:${escapeHtml(variable.id)}" title="${escapeHtml(variable.descripcion || variable.short_name)}">${escapeHtml(scatterSocioeconomicLabel(variable))}</option>`).join("")}
     </optgroup>
   `).join("");
   const options = `
