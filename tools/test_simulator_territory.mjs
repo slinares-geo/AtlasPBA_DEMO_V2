@@ -1,0 +1,84 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import { latestElection, observe, simulate } from '../js/simulator-model.mjs';
+import { territoryPoints, summarizeTerritories, allocateNewVoters, insideLasso } from '../js/simulator-territory-model.mjs';
+const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+const aggregateRows = vm.runInNewContext(`const isFiniteNumber = Number.isFinite; (${app.match(/function aggregateRows\(rows\) \{[\s\S]*?\n\}/)[0]})`);
+const data = JSON.parse(fs.readFileSync(new URL('../data/electoral_data.json', import.meta.url)));
+const rows = data.party.elections[latestElection(data).source.id];
+const original = JSON.stringify(rows);
+const base = observe(aggregateRows(Object.values(rows)));
+for (const force of base.forces) {
+  const points = territoryPoints(rows, force.name);
+  const scenario = simulate(base, { force: force.name, share: .9, increase: true, turnout: 1 });
+  const all = summarizeTerritories(points, new Set(points.map(p => p.key)), base, scenario, aggregateRows);
+  assert.equal(all.weight, 1);
+  assert.equal(all.votes, force.votes);
+  assert.equal(all.positivos, base.positivos);
+  assert.equal(all.turnout, base.turnout);
+  assert.equal(all.newcomerRatio, 1);
+  assert.equal(all.intensity, scenario.additional / base.positivos);
+  assert.equal(all.otherVotes, base.positivos - force.votes);
+  assert.equal(all.newVotes, scenario.newcomers);
+  assert.equal(all.potential, all.otherVotes + scenario.newcomers);
+  const allocation = allocateNewVoters(points, base, scenario);
+  assert.equal([...allocation.values()].reduce((a,b) => a+b,0), scenario.newcomers);
+  for (const p of points) assert.ok(allocation.get(p.key) <= p.abstentions);
+  const empty = summarizeTerritories(points, new Set(), base, scenario, aggregateRows);
+  assert.equal(empty.potential, 0); assert.equal(empty.gap, scenario.additional);
+  assert.equal(empty.count, 0); assert.equal(empty.intensity, null); assert.equal(empty.newcomerRatio, null);
+  const subset = points.slice(0, 3);
+  const s = summarizeTerritories(points, new Set(subset.map(p => p.key)), base, scenario, aggregateRows);
+  assert.equal(s.votes, subset.reduce((v,p) => v + p.votes, 0));
+  assert.equal(s.share, s.votes / s.positivos);
+  assert.equal(s.median, subset.map(p => p.competition).sort((a,b) => a-b)[1]);
+}
+assert.equal(JSON.stringify(rows), original);
+const square = [{x:0,y:0},{x:10,y:0},{x:10,y:10},{x:0,y:10}];
+assert.equal(insideLasso({x:5,y:5}, square), true);
+assert.equal(insideLasso({x:0,y:5}, square), true);
+assert.equal(insideLasso({x:11,y:5}, square), false);
+assert.equal(insideLasso({x:5,y:5}, square.slice(0,2)), false);
+const concave = [{x:0,y:0},{x:10,y:0},{x:10,y:3},{x:3,y:3},{x:3,y:10},{x:0,y:10}];
+assert.equal(insideLasso({x:8,y:8}, concave), false);
+assert.equal(insideLasso({x:2,y:8}, concave), true);
+const synthetic = { x: { partido:'X', electores:100, votantes:100, positivos:100, fuerzas:{A:50}, margen:.2 } };
+const scenario = { force: {name:'A'}, additional:500, newcomers:10 };
+const s = summarizeTerritories(territoryPoints(synthetic, 'A'), new Set(['x']), {positivos:200, electores:100, votantes:100}, {...scenario,newcomers:0}, aggregateRows);
+assert.equal(s.intensity, 5); assert.equal(s.newcomerRatio, null);
+console.log(`OK: ${Object.keys(rows).length} partidos, ${base.forces.length} fuerzas, agregados ponderados, mediana, selección vacía, abstención cero, intensidad >100%, lasso cóncavo y datos intactos.`);
+
+// Transparent example, conservation and selection-independent rounding.
+const poolRows = {
+  A: {partido:'A', electores:20000, votantes:15000, positivos:14000, fuerzas:{Chosen:4000,Other:10000}, margen:.1},
+  B: {partido:'B', electores:10000, votantes:5000, positivos:4000, fuerzas:{Chosen:1000,Other:3000}, margen:.2},
+};
+const poolBase = {electores:30000,votantes:20000,positivos:18000};
+const poolScenario = {force:{name:'Chosen'},newcomers:10000,additional:29500};
+const poolPoints = territoryPoints(poolRows,'Chosen');
+const capacity = summarizeTerritories(poolPoints,new Set(['A']),poolBase,poolScenario,aggregateRows);
+assert.equal(capacity.otherVotes,10000);
+assert.equal(capacity.newVotes,5000);
+assert.equal(capacity.potential,15000);
+assert.equal(capacity.gap,14500);
+assert.equal(capacity.sufficient,false);
+const enlarged = summarizeTerritories(poolPoints,new Set(['A','B']),poolBase,poolScenario,aggregateRows);
+assert.equal(enlarged.potential,23000);
+assert.ok(enlarged.coverage > capacity.coverage);
+const reachable = summarizeTerritories(poolPoints,new Set(['A','B']),poolBase,{...poolScenario,additional:20000},aggregateRows);
+assert.equal(reachable.sufficient,true);
+assert.equal(reachable.surplus,3000);
+assert.equal(reachable.captureRate,20000/23000);
+const noGoal = summarizeTerritories(poolPoints,new Set(),poolBase,{...poolScenario,additional:0},aggregateRows);
+assert.equal(noGoal.coverage,null); assert.equal(noGoal.gap,0);
+const constant = summarizeTerritories(poolPoints,new Set(['A']),poolBase,{...poolScenario,newcomers:0},aggregateRows);
+assert.equal(constant.newVotes,0); assert.equal(constant.potential,10000);
+const rounded = allocateNewVoters(poolPoints,poolBase,{newcomers:3});
+assert.equal([...rounded.values()].reduce((a,b)=>a+b,0),3);
+assert.deepEqual([...rounded], [...allocateNewVoters([...poolPoints].reverse(),poolBase,{newcomers:3})]);
+const noAbstentions = territoryPoints(synthetic,'A');
+assert.equal(allocateNewVoters(noAbstentions,{electores:100,votantes:100},{newcomers:0}).get('x'),0);
+assert.throws(()=>allocateNewVoters(noAbstentions,{electores:100,votantes:100},{newcomers:1}));
+assert.throws(()=>allocateNewVoters(poolPoints,{electores:30001,votantes:20000},{newcomers:1}));
+console.log('OK potencial: otras fuerzas + nuevos votos proporcionales, enteros, conservación, selección estable, crecimiento de cobertura, exceso, meta cero y sin abstenciones.');

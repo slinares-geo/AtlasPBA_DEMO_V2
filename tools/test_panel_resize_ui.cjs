@@ -1,0 +1,56 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const tmp=require('node:os').tmpdir();
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'msedge'});
+ try {
+  const page=await browser.newPage({viewport:{width:1366,height:768}}), errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.route(/\/js\/app\.js(?:\?|$)/,async route=>route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(__dirname,'../js/app.js'),'utf8')+`
+window.__layout={color:key=>simulatorAtlasView.layer.getLayers().find(l=>l.feature.properties.key===key).options.fillColor};`}));
+  const ready=async()=>{await page.locator('#loading.is-hidden').waitFor({state:'attached'});await page.waitForTimeout(150);};
+  await page.goto('http://127.0.0.1:8765',{waitUntil:'domcontentloaded'});await ready();
+  const box=selector=>page.locator(selector).boundingBox();
+  const drag=async(key,dx,dy)=>{const b=await box(`[data-resize="${key}"]`);await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2+dx,b.y+b.height/2+dy,{steps:8});await page.mouse.up();await page.waitForTimeout(200);};
+  const original=await box('.map-pane');
+  await drag('left',60,0);assert.ok((await box('.map-pane')).x>original.x+45);
+  const beforeRight=await box('.map-pane');await drag('right',-50,0);assert.ok((await box('.map-pane')).width<beforeRight.width-35);
+  const beforeBottom=await box('.map-pane');await drag('bottom',0,-55);assert.ok((await box('.map-pane')).height<beforeBottom.height-40);
+  const saved=await box('.map-pane');await page.reload({waitUntil:'domcontentloaded'});await ready();
+  for(const k of ['x','width','height'])assert.ok(Math.abs((await box('.map-pane'))[k]-saved[k])<3,'persistence '+k);
+  for(const key of ['left','right','bottom'])await page.locator(`[data-resize="${key}"]`).dblclick();
+  await page.waitForTimeout(200);
+  assert.ok(Math.abs((await box('.map-pane')).width-original.width)<3,'reset');
+  await page.locator('#openSimulator').click();
+  assert.equal(await page.locator('.simulator input[type="number"]').count(),0);
+  assert.doesNotMatch(await page.locator('.sim-eyebrow').textContent(),/hipot/i);
+  await page.locator('#simIncrease').check();
+  await page.locator('#simShare').focus();await page.keyboard.press('End');assert.equal(await page.locator('#simShare').inputValue(),'100');
+  await page.keyboard.press('Home');
+  await page.locator('#simTurnout').focus();await page.keyboard.press('ArrowRight');
+  const comparison=await box('.sim-comparison'), explore=await box('#simExplore');
+  assert.ok(comparison.y>=0 && comparison.y+comparison.height<768,'full comparison visible');
+  assert.ok(explore.y+explore.height<768,'explore action visible');
+  await page.screenshot({path:path.join(tmp,'atlas-simulator-compact.png')});
+  await page.locator('#simExplore').click();await page.waitForTimeout(350);
+  const colors=await page.locator('.sim-territory-point').evaluateAll(nodes=>new Set(nodes.map(n=>getComputedStyle(n).fill)).size);
+  assert.ok(colors>20,'ADN varies by party');
+  const point=page.locator('.sim-territory-node').first();const key=await point.getAttribute('data-key');
+  const color=await point.locator('.sim-territory-point').evaluate(n=>getComputedStyle(n).fill);
+  await point.focus();await page.keyboard.press('Enter');
+  assert.equal(await point.locator('.sim-territory-point').evaluate(n=>getComputedStyle(n).fill),color,'selection preserves fill');
+  const mapColor=await page.evaluate(k=>window.__layout.color(k),key);
+  const rgb=mapColor.slice(1).match(/../g).map(n=>parseInt(n,16));assert.equal(color,`rgb(${rgb.join(', ')})`,'map and chart share color');
+  await drag('bottom',0,-70);
+  await page.screenshot({path:path.join(tmp,'atlas-resizable-simulator.png')});
+  await page.locator('#simExit').click();
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
+  assert.equal(await page.locator('.panel-resizer:visible').count(),0);
+  await page.locator('#openSimulator').click();
+  await page.screenshot({path:path.join(tmp,'atlas-simulator-mobile.png'),fullPage:true});
+  assert.deepEqual(errors,[]);
+  console.log('OK: 3 draggable borders, saved sizes/reset, slider-only keyboard controls, open comparison at 1366x768, ADN colors unchanged by selection, matching map, mobile.');
+ } finally {await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

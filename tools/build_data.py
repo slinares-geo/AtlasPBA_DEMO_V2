@@ -841,6 +841,11 @@ def main():
         "party": {"elections": party_elections},
     }
 
+    supplement = DATA_DIR / "jepba_2025.json"
+    if supplement.exists():
+        from import_jepba_2025 import merge_into
+        merge_into(payload, json.loads(supplement.read_text(encoding="utf-8")))
+
     all_circuit_keys = set().union(*(set(data) for data in circuit_elections.values()))
     all_locality_keys = set().union(*(set(data) for data in locality_elections.values()))
     all_party_keys = set().union(*(set(data) for data in party_elections.values()))

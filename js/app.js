@@ -1,3 +1,9 @@
+import { setupSimulator } from './simulator.mjs';
+import { commonCapabilities, commonLevels, difference } from './election-capabilities.mjs';
+import { ADN_ID, ADN_NAME, ADN_LEGEND_LABEL, ADN_DESCRIPTION, ADN_FAMILY, ADN_PALETTE, formatIndex } from './indicator-config.mjs';
+import { attachIndex, indexValue, indexColor } from './adn-model.mjs';
+import { setupPanelResize } from './panel-resize.mjs';
+
 const state = {
   map: null,
   partyLayer: null,
@@ -8,6 +14,7 @@ const state = {
   highlightPinLayer: null,
   data: null,
   socioData: null,
+  adnData: null,
   partyGeojson: null,
   localityGeojson: null,
   circuitGeojson: null,
@@ -96,6 +103,7 @@ const PROFILE_MAIN_INDICATORS = [
 ];
 
 const SOCIO_DIMENSIONS = {
+  indices_compuestos: "Índices compuestos",
   capital_humano: "Educación",
   acceso_informacion: "Acceso a información",
   privacion: "Privación multidimensional",
@@ -106,6 +114,7 @@ const SOCIO_DIMENSIONS = {
 };
 
 const SOCIO_FAMILIES = [
+  ADN_FAMILY,
   { id: "population_total", dimension: "poblacion_migraciones", label: "Población total", shortName: "Población total", codes: ["poblacion_total"], categories: { poblacion_total: "Personas" } },
   { id: "population_age", dimension: "poblacion_migraciones", label: "Población por grupo de edad", shortLabel: "Población", codes: ["EDAD0_14", "EDAD15_29", "EDAD30_54", "EDAD55yMas"], categories: { EDAD0_14: "0–14 años", EDAD15_29: "15–29 años", EDAD30_54: "30–54 años", EDAD55yMas: "55 años y más" } },
   { id: "migration", dimension: "poblacion_migraciones", label: "Residencia hace cinco años", codes: ["P17_1P", "p17_2P", "p17_3P", "p17_4P", "p17_5P"], categories: { P17_1P: "Misma localidad", p17_2P: "Otra localidad bonaerense", p17_3P: "Otra provincia", p17_4P: "Otro país", p17_5P: "No había nacido" } },
@@ -531,6 +540,7 @@ function isFiniteNumber(value) {
 }
 
 function fmt(value, format) {
+  if (format === "index") return formatIndex(value);
   if (format === "pct") return formatPct(value);
   if (format === "pp") return formatPp(value);
   return formatNumber(value);
@@ -576,7 +586,97 @@ function electionLabel(id) {
 }
 
 function unitData(unit, electionId) {
-  return state.data[unit].elections[electionId] || {};
+  return state.data[unit]?.elections[electionId] || {};
+}
+
+function metricElectionIds() {
+  return state.viewMode === "comparison" ? [state.baseElection, state.targetElection] : [state.targetElection];
+}
+
+function territorialElectionIds() {
+  if (state.continuityActive) return selectedContinuityElections();
+  const ids = metricElectionIds();
+  if (isScatterOpen()) {
+    for (const control of [els.scatterX, els.scatterY]) {
+      if (control.value.startsWith("electoral:")) ids.push(els.scatterElection.value);
+      else if (!control.value.startsWith("socio:")) ids.push(state.baseElection, state.targetElection);
+    }
+  }
+  return [...new Set(ids.filter(Boolean))];
+}
+
+function validTerritorialLevel(level) {
+  return commonLevels(state.data, territorialElectionIds()).includes(level) ? level : "party";
+}
+
+function sourceHasVoters(id) {
+  return state.data.sources.find(source => source.id === id)?.voter_total_available !== false;
+}
+
+function scatterMetricSupported(value) {
+  if (!value || value.startsWith("socio:")) return true;
+  const ids = value.startsWith("electoral:") ? [els.scatterElection.value || state.targetElection] : [state.baseElection, state.targetElection];
+  if (/participacion|ausentismo/.test(value)) return ids.every(sourceHasVoters);
+  if (/blanco|nulo/.test(value)) return commonCapabilities(state.data, ids, "available_vote_types").includes(value.includes("blanco") ? "blanco" : "nulo");
+  return true;
+}
+
+function questionSupported(question) {
+  if (question.continuity) return true;
+  const ids = question.mode === "comparison" ? [state.baseElection, state.targetElection] : [state.targetElection];
+  if (question.indicator && !commonCapabilities(state.data, ids, "available_metrics").includes(question.indicator)) return false;
+  if (question.voteType && !commonCapabilities(state.data, ids, "available_vote_types").includes(question.voteType)) return false;
+  if (question.positiveMeasure && !commonCapabilities(state.data, ids, "available_positive_measures").includes(question.positiveMeasure)) return false;
+  return !question.scatter || [question.scatter.x, question.scatter.y].every(scatterMetricSupported);
+}
+
+function syncElectionCapabilities() {
+  const levels = commonLevels(state.data, territorialElectionIds());
+  const changed = !levels.includes(state.mapLevel);
+  if (changed) {
+    state.mapLevel = "party";
+    state.continuityDetailKey = null;
+    state.continuityDetailUnit = null;
+    state.continuityCache = null;
+    state.scatterSelection.clear();
+  }
+  if (state.questionUnit && !levels.includes(state.questionUnit)) state.questionUnit = "party";
+  if (!levels.includes("circuit")) {
+    state.selectedCircuit = null;
+    closeCircuitDrawer();
+    state.pinnedCircuitMaps.forEach(item => { item.map.remove(); item.panel.remove(); });
+    state.pinnedCircuitMaps = [];
+  }
+  if (!levels.includes("locality")) state.selectedLocality = null;
+  for (const [level, control] of [["party", els.mapLevelParty], ["locality", els.mapLevelLocality], ["circuit", els.mapLevelCircuit]]) {
+    control.hidden = !levels.includes(level);
+    control.disabled = !levels.includes(level);
+  }
+  for (const control of [els.scatterUnit, els.continuityUnit]) {
+    const allowed = control === els.continuityUnit ? commonLevels(state.data, selectedContinuityElections()) : levels;
+    [...control.options].forEach(option => { option.hidden = option.disabled = !allowed.includes(option.value); });
+    if (!allowed.includes(control.value)) control.value = "party";
+  }
+  for (const control of [els.scatterX, els.scatterY]) {
+    [...control.options].forEach(option => { option.hidden = option.disabled = !scatterMetricSupported(option.value); });
+    if (control.selectedOptions[0]?.disabled) control.value = control === els.scatterX ? "peronismo_delta" : "margen_delta";
+  }
+  if (state.activeQuestion && !questionSupported(state.activeQuestion)) {
+    state.activeQuestion = null;
+    state.questionUnit = null;
+    els.activeQuestionLabel.textContent = "Sin pregunta activa";
+    state.scatterSelection.clear();
+  }
+  els.questionList.querySelectorAll('[data-id]').forEach(button => {
+    const question = QUESTIONS.find(q => q.id === button.dataset.id);
+    button.disabled = question && !questionSupported(question);
+    button.title = button.disabled ? "Métrica no publicada o no comparable para esta elección" : "";
+  });
+  const limited = territorialElectionIds().map(id => state.data.sources.find(s => s.id === id)).filter(s => s?.minimum_level === "party");
+  const note = document.getElementById("electionCoverageNote");
+  note.hidden = !limited.length;
+  note.textContent = limited.length ? "Provinciales PBA 2025 · Escrutinio definitivo de la Junta Electoral. Disponible solo por partido/distrito. Diputados o Senadores según sección. Total publicado: positivos + blancos; participación, ausentismo y nulos no disponibles. Comparaciones en el nivel común: partido." : "";
+  if (changed) requestAnimationFrame(() => fitMainMapToCurrentState());
 }
 
 function currentUnit() {
@@ -584,13 +684,12 @@ function currentUnit() {
   if (state.questionUnit) return state.questionUnit;
   if (state.selectedCircuit) return "circuit";
   if (state.selectedLocality) return "locality";
-  if (state.selectedParty && state.mapLevel === "party") return "circuit";
+  if (state.selectedParty && state.mapLevel === "party") return validTerritorialLevel("circuit");
   return state.mapLevel;
 }
 
 function effectiveQuestionUnit(question) {
-  if (question?.unit === "current") return state.mapLevel;
-  return question?.unit || "party";
+  return validTerritorialLevel(question?.unit === "current" ? state.mapLevel : question?.unit || "party");
 }
 
 function unitLabel(unit, plural = true) {
@@ -603,7 +702,10 @@ function featureKeyForUnit(feature, unit) {
 }
 
 function currentMetricList() {
-  return METRICS.base;
+  const allowed = commonCapabilities(state.data, metricElectionIds(), "available_metrics");
+  const metrics = METRICS.base.filter(metric => allowed.includes(metric.value));
+  if (state.viewMode !== "comparison") metrics.push({ value: ADN_ID, label: ADN_NAME, format: "index" });
+  return metrics;
 }
 
 function currentMetric() {
@@ -615,6 +717,7 @@ function currentElectionId() {
 }
 
 function rowFor(key, unit) {
+  if (state.indicator === ADN_ID) return state.adnData.territories[unit]?.[key] || null;
   return state.viewMode === "comparison" ? comparisonRow(key, unit) : unitData(unit, state.targetElection)[key] || null;
 }
 
@@ -638,6 +741,7 @@ function rowForFeature(feature, unit, electionId = state.targetElection) {
 }
 
 function valueForFeature(feature, unit) {
+  if (state.indicator === ADN_ID) return indexValue(state.adnData, unit, featureKeyForUnit(feature, unit));
   const target = rowForFeature(feature, unit, state.targetElection);
   const base = rowForFeature(feature, unit, state.baseElection);
   const targetValue = metricValue(target);
@@ -692,6 +796,7 @@ function comparisonRow(key, unit) {
 }
 
 function valueFor(key, unit) {
+  if (state.indicator === ADN_ID) return indexValue(state.adnData, unit, key);
   const target = unitData(unit, state.targetElection)[key];
   const base = unitData(unit, state.baseElection)[key];
   const targetValue = metricValue(target);
@@ -714,7 +819,7 @@ function metricValue(row) {
       impugnado: "pct_impugnado",
       recurrido: "pct_recurrido",
     };
-    return row[fields[state.voteType]] ?? 0;
+    return row[fields[state.voteType]] ?? (state.voteType === "blanco" && state.viewMode !== "comparison" ? row.pct_blanco_total_publicado : null) ?? null;
   }
 
   const forceVotes = row.bloques?.[state.force] || 0;
@@ -727,6 +832,7 @@ function metricValue(row) {
 }
 
 function metricDomain() {
+  if (state.indicator === ADN_ID) return state.adnData.metadata.display_domain;
   if (state.viewMode === "comparison") {
     if (state.indicator === "participacion") return [-0.25, 0.12];
     if (state.indicator === "ausentismo") return [-0.12, 0.25];
@@ -747,11 +853,12 @@ function metricFormat() {
 }
 
 function metricLabel() {
+  if (state.indicator === ADN_ID) return ADN_NAME;
   const prefix = state.viewMode === "comparison" ? "Cambio " : "";
   if (state.indicator === "participacion") return `${prefix}participación electoral`;
   if (state.indicator === "ausentismo") return `${prefix}ausentismo electoral`;
   if (state.indicator === "competitividad") return `${prefix}competitividad`;
-  if (state.voteType !== "positivo") return `${prefix}${VOTE_TYPE_LABELS[state.voteType] || state.voteType}`;
+  if (state.voteType !== "positivo") return `${prefix}${VOTE_TYPE_LABELS[state.voteType] || state.voteType}${publishedWhiteBasis() ? " sobre total publicado" : ""}`;
   const measure = {
     share_positive: `${FORCE_LABELS[state.force] || state.force} sobre votos positivos`,
     share_total: `${FORCE_LABELS[state.force] || state.force} sobre total de votos`,
@@ -761,6 +868,7 @@ function metricLabel() {
 }
 
 function metricTooltipLabel() {
+  if (state.indicator === ADN_ID) return ADN_NAME;
   if (state.indicator === "participacion") return state.viewMode === "comparison" ? "Cambio participacion" : "Participacion";
   if (state.indicator === "ausentismo") return state.viewMode === "comparison" ? "Cambio ausentismo" : "Ausentismo";
   if (state.indicator === "competitividad") return state.viewMode === "comparison" ? "Cambio competitividad" : "Competitividad";
@@ -799,6 +907,10 @@ function mapTooltipHtml(feature, unit) {
   const targetRow = rowForFeature(feature, unit, state.targetElection);
   const availabilityLine = electoralAvailabilityLine(feature, unit, targetRow);
   if (state.continuityActive && key) return continuityTooltipHtml(key, unit);
+  if (state.indicator === ADN_ID) {
+    const record = state.adnData.territories[unit]?.[key];
+    return `<div class="tooltip-title">${escapeHtml(label)}</div><div class="tooltip-unit">Censo 2022 · Experimental</div><div class="tooltip-value">${escapeHtml(ADN_NAME)}: <strong>${formatIndex(value)}</strong></div>${record?.motivo_sin_dato ? `<div>${escapeHtml(record.motivo_sin_dato)}</div>` : ""}`;
+  }
   if (state.activeQuestion?.mapMode === "winner") {
     return `
       <div class="tooltip-title">${escapeHtml(label)}</div>
@@ -838,11 +950,17 @@ function mapTooltipHtml(feature, unit) {
   `;
 }
 
+function publishedWhiteBasis() {
+  return state.viewMode !== "comparison" && state.voteType === "blanco" && state.data.sources.find(s => s.id === state.targetElection)?.vote_share_basis === "valid_published";
+}
+
 function metricDefinition() {
   if (state.continuityActive) return CONTINUITY_DEFINITION;
+  if (state.indicator === ADN_ID) return ADN_DESCRIPTION;
   if (state.indicator === "participacion") return "Porcentaje de electores habilitados que emitieron voto.";
   if (state.indicator === "ausentismo") return "Porcentaje de electores habilitados que no votaron.";
   if (state.indicator === "competitividad") return "Margen entre la primera y la segunda fuerza sobre votos positivos. Valores mas bajos indican mayor competencia.";
+  if (publishedWhiteBasis()) return "Votos en blanco como porcentaje del total publicado: positivos + blancos. No incluye otros tipos no publicados.";
   if (state.voteType !== "positivo") return `${VOTE_TYPE_LABELS[state.voteType] || "Tipo de voto"} como porcentaje del total de votos emitidos.`;
   if (state.positiveMeasure === "share_total") return `${FORCE_LABELS[state.force] || state.force} como porcentaje del total de votos emitidos.`;
   if (state.positiveMeasure === "gap_winner") return `Diferencia entre ${FORCE_LABELS[state.force] || state.force} y la primera fuerza. Los territorios donde la fuerza seleccionada lidera se excluyen de esta lectura.`;
@@ -850,6 +968,7 @@ function metricDefinition() {
 }
 
 function metricColor() {
+  if (state.indicator === ADN_ID) return ADN_PALETTE.at(-1);
   if (state.indicator === "participacion") return COLORS.participacion;
   if (state.indicator === "ausentismo") return COLORS.ausentismo;
   if (state.indicator === "competitividad") return COLORS.competitividad;
@@ -866,6 +985,7 @@ function metricColor() {
 }
 
 function colorFor(value) {
+  if (state.indicator === ADN_ID) return indexColor(value, state.adnData.metadata.display_domain);
   if (!isFiniteNumber(value)) return "rgba(244,239,228,.22)";
   const baseColor = metricColor();
   const domain = metricDomain();
@@ -904,6 +1024,129 @@ function mix(a, b, t) {
   return `#${out.join("")}`;
 }
 
+let simulatorSelectionLayer = null;
+let simulatorMapNote = null;
+function highlightSimulatorTerritories(keys, electionId) {
+  if (!state.map) return;
+  if (simulatorSelectionLayer) state.map.removeLayer(simulatorSelectionLayer);
+  simulatorSelectionLayer = null;
+  simulatorMapNote?.remove();
+  simulatorMapNote = null;
+  if (!keys.size) return;
+  if (!state.map.getPane('simulatorSelection')) {
+    const pane = state.map.createPane('simulatorSelection');
+    pane.style.zIndex = '450';
+    pane.style.pointerEvents = 'none';
+  }
+  simulatorSelectionLayer = L.geoJSON({ type: 'FeatureCollection', features: state.partyGeojson.features.filter(f => keys.has(f.properties.key)) }, {
+    pane: 'simulatorSelection', interactive: false,
+    style: { color: '#8928b0', weight: 3.5, opacity: 1, fillColor: '#ad5bc9', fillOpacity: .12, dashArray: '6 3' },
+  }).addTo(state.map);
+  simulatorMapNote = L.control({ position: 'bottomleft' });
+  simulatorMapNote.onAdd = () => {
+    const note = L.DomUtil.create('div', 'sim-map-note');
+    const mapped = simulatorSelectionLayer.getLayers().length;
+    note.textContent = `Contorno violeta: ${keys.size} partidos del simulador · ${electionLabel(electionId)}. ${mapped < keys.size ? `${keys.size - mapped} sin geometría. ` : ''}El relleno del mapa conserva los filtros del Atlas.`;
+    return note;
+  };
+  simulatorMapNote.addTo(state.map);
+}
+
+// This view owns only a temporary map layer; Atlas filters and selections stay untouched.
+let simulatorAtlasView = null;
+function simulatorViewStyle(feature) {
+  const active = simulatorAtlasView.keys.has(feature.properties.key);
+  const unit = simulatorAtlasView.unit || 'party';
+  const row = unitData(unit,simulatorAtlasView.electionId)[feature.properties.key];
+  return { color: active ? '#702091' : '#477580', weight: active ? 3 : .8, dashArray: row ? null : '4 4', fillColor: indexColor(indexValue(state.adnData,unit,feature.properties.key),state.adnData.metadata.display_domain), fillOpacity: .9 };
+}
+function updateSimulatorAtlasView({ keys, electionId, force, unit = 'party', parentParties = new Set(), fit = false }) {
+  if (!simulatorAtlasView) return;
+  const scope = `${electionId}|${unit}|${[...parentParties].sort().join(',')}`;
+  Object.assign(simulatorAtlasView, { keys: new Set(keys), electionId, force, unit, parentParties:new Set(parentParties) });
+  if (scope !== simulatorAtlasView.scope) {
+    simulatorAtlasView.scope = scope;
+    simulatorAtlasView.layer.clearLayers();
+    if (simulatorAtlasView.background) state.map.removeLayer(simulatorAtlasView.background);
+    if (unit === 'circuit') {
+      simulatorAtlasView.background = L.geoJSON(state.partyGeojson, {
+        renderer:simulatorAtlasView.renderer, interactive:false,
+        style:{fillColor:'#ffffff',fillOpacity:1,color:'#c3cbcc',weight:.7},
+      }).addTo(state.map);
+      simulatorAtlasView.layer.addData({type:'FeatureCollection',features:state.circuitGeojson.features.filter(f=>parentParties.has(f.properties.partido_norm))});
+      simulatorAtlasView.layer.bringToFront();
+    } else {
+      simulatorAtlasView.background = null;
+      simulatorAtlasView.layer.addData(state.partyGeojson);
+    }
+  }
+  simulatorAtlasView.layer.setStyle(simulatorViewStyle);
+  let withoutResults = 0;
+  simulatorAtlasView.layer.eachLayer(layer => {
+    const key = layer.feature.properties.key, row = unitData(unit,electionId)[key];
+    if (!row) withoutResults++;
+    const label = unit === 'circuit' ? `${row?.partido || layer.feature.properties.partido} · Circuito ${row?.circuito || key}` : row?.partido || key;
+    layer.setTooltipContent(`<strong>${escapeHtml(label)}</strong><br>${escapeHtml(ADN_NAME)}: ${formatIndex(indexValue(state.adnData,unit,key))}<br>${escapeHtml(force)}: ${formatPct(row?.positivos > 0 ? (row.fuerzas?.[force] || 0) / row.positivos : null)}<br>Votos positivos: ${formatNumber(row?.positivos)}<br>${row ? 'Clic para agregar o quitar de la selección' : 'Sin resultados electorales; no se incluye en el potencial'}`);
+  });
+  const geometryKeys = new Set(simulatorAtlasView.layer.getLayers().map(layer=>layer.feature.properties.key));
+  const withoutGeometry = [...keys].filter(key=>!geometryKeys.has(key)).length;
+  simulatorAtlasView.noteElement.innerHTML = `<strong>${escapeHtml(ADN_LEGEND_LABEL)}</strong><div class="legend-ramp" style="background:linear-gradient(90deg,${ADN_PALETTE.join(',')})"></div><div class="legend-scale"><span>${formatIndex(state.adnData.metadata.display_domain[0])}</span><span>${formatIndex(state.adnData.metadata.display_domain[1])}</span></div>${withoutResults ? `<small>${withoutResults} territorios sin resultados; no suman potencial.</small>` : ''}${withoutGeometry ? `<small>${withoutGeometry} seleccionados sin geometría.</small>` : ''}`;
+  if (fit) {
+    const bounds = simulatorAtlasView.layer.getBounds();
+    if (bounds.isValid()) state.map.fitBounds(bounds,{padding:[24,24],animate:false});
+  }
+}
+function enterSimulatorAtlasView(options) {
+  if (simulatorAtlasView || !state.map) return;
+  const hiddenLayers = [state.partyLayer, state.scatterMainLayer, state.highlightPinLayer, simulatorSelectionLayer].filter(layer => layer && state.map.hasLayer(layer));
+  simulatorAtlasView = { ...options, keys: new Set(options.keys), hiddenLayers, center: state.map.getCenter(), zoom: state.map.getZoom(), maxBounds: state.map.options.maxBounds, scroll: window.scrollY };
+  hiddenLayers.forEach(layer => state.map.removeLayer(layer));
+  if (!state.map.getPane('simulatorExplorer')) state.map.createPane('simulatorExplorer').style.zIndex = '460';
+  simulatorAtlasView.renderer = L.canvas({ pane: 'simulatorExplorer' });
+  simulatorAtlasView.layer = L.geoJSON(null, {
+    renderer: simulatorAtlasView.renderer, pane: 'simulatorExplorer', style: simulatorViewStyle, bubblingMouseEvents: false,
+    onEachFeature(feature, layer) {
+      layer.bindTooltip('', { className: 'map-tooltip', sticky: true });
+      layer.on('click', event => { if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent); simulatorAtlasView?.onToggle(feature.properties.key); });
+    },
+  }).addTo(state.map);
+  simulatorAtlasView.note = L.control({ position: 'bottomleft' });
+  simulatorAtlasView.note.onAdd = () => {
+    const note = L.DomUtil.create('div', 'sim-map-note');
+    L.DomEvent.disableClickPropagation(note); L.DomEvent.disableScrollPropagation(note);
+    simulatorAtlasView.noteElement = note; return note;
+  };
+  simulatorAtlasView.note.addTo(state.map);
+  updateSimulatorAtlasView(options);
+  requestAnimationFrame(() => {
+    if (!simulatorAtlasView) return;
+    state.map.invalidateSize();
+    state.map.fitBounds(simulatorAtlasView.layer.getBounds(), { padding: [24, 24], animate: false });
+  });
+}
+function leaveSimulatorAtlasView() {
+  if (!simulatorAtlasView) return;
+  const previous = simulatorAtlasView;
+  if (previous.background) state.map.removeLayer(previous.background);
+  state.map.removeLayer(previous.layer); state.map.removeLayer(previous.renderer); previous.note.remove();
+  previous.hiddenLayers.forEach(layer => layer.addTo(state.map));
+  simulatorAtlasView = null;
+  requestAnimationFrame(() => {
+    state.map.setMaxBounds(null);
+    state.map.stop(); state.map.invalidateSize({ pan: false });
+    state.map.setView(previous.center, previous.zoom, { animate: false, reset: true });
+    state.map.setMaxBounds(previous.maxBounds);
+    window.scrollTo({ top: previous.scroll, behavior: 'instant' });
+  });
+}
+function fitSimulatorSelection(keys) {
+  if (!simulatorAtlasView || !keys.size) return;
+  const bounds = L.latLngBounds([]);
+  simulatorAtlasView.layer.eachLayer(layer => { if (keys.has(layer.feature.properties.key)) bounds.extend(layer.getBounds()); });
+  if (bounds.isValid()) state.map.fitBounds(bounds, { padding: [24, 24], animate: false });
+  document.querySelector('.map-pane').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function styleParty(feature) {
   const key = feature.properties.key;
   const selected = state.selectedParty === key;
@@ -912,7 +1155,7 @@ function styleParty(feature) {
     color: selected ? COLORS.accent : COLORS.border,
     weight: selected ? 2.3 : 0.7,
     fillColor: mapFillColor(key, "party"),
-    fillOpacity: scatterDim ? 0.08 : selected ? 0.75 : 0.55,
+    fillOpacity: scatterDim ? 0.08 : state.indicator === ADN_ID ? 0.9 : selected ? 0.75 : 0.55,
     opacity: scatterDim ? 0.25 : selected ? 0.95 : 0.78,
   };
 }
@@ -925,7 +1168,7 @@ function styleCircuit(feature) {
     color: selected ? COLORS.accent : COLORS.border,
     weight: selected ? 2.2 : 0.65,
     fillColor: mapFillColor(key, "circuit"),
-    fillOpacity: scatterDim ? 0.08 : selected ? 0.75 : 0.55,
+    fillOpacity: scatterDim ? 0.08 : state.indicator === ADN_ID ? 0.9 : selected ? 0.75 : 0.55,
     opacity: scatterDim ? 0.25 : selected ? 0.95 : 0.8,
   };
 }
@@ -933,14 +1176,14 @@ function styleCircuit(feature) {
 function styleLocality(feature) {
   const key = feature.properties.localidad_key;
   const selected = key && state.selectedLocality === key;
-  const hasData = feature.properties.has_electoral_data !== false;
+  const hasData = state.indicator === ADN_ID ? isFiniteNumber(indexValue(state.adnData, "locality", key)) : feature.properties.has_electoral_data !== false;
   const scatterDim = (state.scatterSelection.size && els.scatterMode.value === "filter" && !state.scatterSelection.has(key)) || continuityDimmed(key, "locality");
   return {
     color: selected ? COLORS.accent : COLORS.border,
     weight: selected ? 2.2 : hasData ? 0.65 : 0.9,
     dashArray: hasData ? null : "4 4",
     fillColor: hasData && key ? mapFillColor(key, "locality") : "rgba(244,239,228,.28)",
-    fillOpacity: scatterDim ? 0.08 : selected ? 0.75 : hasData ? 0.55 : 0.22,
+    fillOpacity: scatterDim ? 0.08 : state.indicator === ADN_ID ? 0.9 : selected ? 0.75 : hasData ? 0.55 : 0.22,
     opacity: scatterDim ? 0.25 : selected ? 0.95 : hasData ? 0.8 : 0.72,
   };
 }
@@ -981,9 +1224,15 @@ function updateElectionSelectors() {
 }
 
 function updateMetricOptions() {
+  for (const [control, field, key] of [[els.voteType, "available_vote_types", "voteType"], [els.positiveMeasure, "available_positive_measures", "positiveMeasure"]]) {
+    const allowed = commonCapabilities(state.data, metricElectionIds(), field);
+    [...control.options].forEach(option => { option.hidden = option.disabled = !allowed.includes(option.value); });
+    if (!allowed.includes(state[key])) state[key] = allowed[0];
+    control.value = state[key];
+  }
   const list = currentMetricList();
   if (!list.some((metric) => metric.value === state.indicator)) state.indicator = list[0].value;
-  els.indicator.innerHTML = list.map((metric) => `<option value="${metric.value}">${metric.label}</option>`).join("");
+  els.indicator.innerHTML = list.map((metric) => `<option value="${metric.value}">${escapeHtml(metric.label)}</option>`).join("");
   els.indicator.value = state.indicator;
   const isCompare = state.viewMode === "comparison";
   const isVotes = state.indicator === "votos";
@@ -1326,7 +1575,7 @@ function renderLegend() {
     `;
     return;
   }
-  const formatter = metricFormat() === "pp" ? formatPp : metricFormat() === "pct" ? formatPct : formatNumber;
+  const formatter = value => fmt(value, metricFormat());
   const domain = metricDomain();
   const values = rankedRows().map((row) => row.value).filter(isFiniteNumber);
   if (!domain && !values.length) {
@@ -1334,15 +1583,15 @@ function renderLegend() {
     return;
   }
   const [min, max] = domain || extent(values);
-  const ramp = `linear-gradient(90deg, ${COLORS.neutral}, ${metricColor()})`;
-  els.legend.innerHTML = `<div class="legend-title">${metricLabel()}</div><div class="legend-ramp" style="background:${ramp}"></div><div class="legend-scale"><span>${formatter(min)}</span><span>${formatter(max)}</span></div>`;
+  const ramp = `linear-gradient(90deg, ${state.indicator === ADN_ID ? ADN_PALETTE.join(", ") : `${COLORS.neutral}, ${metricColor()}`})`;
+  els.legend.innerHTML = `<div class="legend-title">${escapeHtml(state.indicator === ADN_ID ? ADN_LEGEND_LABEL : metricLabel())}</div><div class="legend-ramp" style="background:${ramp}"></div><div class="legend-scale"><span>${formatter(min)}</span><span>${formatter(max)}</span></div>${state.indicator === ADN_ID ? '<div class="legend-scale">Índice (%) · escala provincial fija · gris: sin dato</div>' : ""}`;
 }
 
 function rankedRows(unitOverride = null) {
   const unit = unitOverride || currentUnit();
-  let keys = Object.keys(state.viewMode === "comparison" ? unitData(unit, state.targetElection) : unitData(unit, currentElectionId()));
+  let keys = Object.keys(state.indicator === ADN_ID ? state.adnData.territories[unit] : unitData(unit, state.targetElection));
   if (["circuit", "locality"].includes(unit) && state.selectedParty) {
-    keys = keys.filter((key) => (unitData(unit, state.targetElection)[key] || unitData(unit, state.baseElection)[key])?.partido_norm === state.selectedParty);
+    keys = keys.filter((key) => state.indicator === ADN_ID ? state.adnData.territories[unit][key].partido_id === state.selectedParty : (unitData(unit, state.targetElection)[key] || unitData(unit, state.baseElection)[key])?.partido_norm === state.selectedParty);
   }
   if (state.scatterSelection.size && els.scatterMode.value === "filter") keys = keys.filter((key) => state.scatterSelection.has(key));
   return keys
@@ -1374,7 +1623,7 @@ function renderRanking(sortDirection = null) {
   });
   els.rankingTitle.textContent = `${metricLabel()} · ${unitLabel(rows[0]?.unit || currentUnit(), true)}`;
   if (els.rankingContext) {
-    els.rankingContext.textContent = state.viewMode === "comparison" ? `${electionLabel(state.baseElection)} vs ${electionLabel(state.targetElection)}` : electionLabel(state.targetElection);
+    els.rankingContext.textContent = state.indicator === ADN_ID ? "Censo 2022 · Experimental" : state.viewMode === "comparison" ? `${electionLabel(state.baseElection)} vs ${electionLabel(state.targetElection)}` : electionLabel(state.targetElection);
   }
   els.rankingList.innerHTML = rows.map((item, index) => rankingItemHtml(item, index)).join("");
 }
@@ -1450,9 +1699,14 @@ function aggregateRows(rows) {
       out.fuerzas[name] = (out.fuerzas[name] || 0) + votes;
     });
   });
-  out.participacion = out.electores ? out.votantes / out.electores : null;
+  for (const field of ["electores", "votantes", "positivos", "blanco", "nulo", "impugnado", "recurrido"]) {
+    if (rows.some(row => !isFiniteNumber(row?.[field]))) out[field] = null;
+  }
+  out.total_publicado = rows.length && rows.every(row => isFiniteNumber(row.total_publicado)) ? rows.reduce((sum, row) => sum + row.total_publicado, 0) : null;
+  out.participacion = out.electores && isFiniteNumber(out.votantes) ? out.votantes / out.electores : null;
   out.ausentismo = isFiniteNumber(out.participacion) ? 1 - out.participacion : null;
   out.pct_blanco = out.votantes ? out.blanco / out.votantes : null;
+  out.pct_blanco_total_publicado = out.total_publicado ? out.blanco / out.total_publicado : null;
   out.pct_nulo = out.votantes ? out.nulo / out.votantes : null;
   out.pct_impugnado = out.votantes ? out.impugnado / out.votantes : null;
   out.pct_recurrido = out.votantes ? out.recurrido / out.votantes : null;
@@ -1475,6 +1729,7 @@ function currentScopeRows(unit, electionId) {
   if (state.selectedCircuit) return [unitData("circuit", electionId)[state.selectedCircuit]].filter(Boolean);
   if (state.selectedLocality) return [unitData("locality", electionId)[state.selectedLocality]].filter(Boolean);
   if (state.selectedParty) {
+    if (validTerritorialLevel("circuit") === "party") return [unitData("party", electionId)[state.selectedParty]].filter(Boolean);
     const scopedUnit = unit === "locality" ? "locality" : "circuit";
     return Object.values(unitData(scopedUnit, electionId)).filter((row) => row.partido_norm === state.selectedParty);
   }
@@ -1504,7 +1759,7 @@ function renderKpis() {
   const target = aggregateRows(targetRows);
   els.kpiStrip.innerHTML = [
     kpi("Electores", formatNumber(target.electores), electionLabel(state.targetElection)),
-    kpi("Votantes", formatNumber(target.votantes), `${formatPct(target.participacion)} de participacion`),
+    voterKpi(target),
     competitivenessBlock(base, target),
   ].join("");
   renderTotalVoteStack(target);
@@ -1513,6 +1768,12 @@ function renderKpis() {
 
 function kpi(label, value, note = "") {
   return `<div class="kpi-item"><span>${label}</span><strong>${value}</strong><i>${note || "&nbsp;"}</i></div>`;
+}
+
+function voterKpi(row) {
+  return isFiniteNumber(row.total_publicado) && !isFiniteNumber(row.votantes)
+    ? kpi("Total publicado", formatNumber(row.total_publicado), "Positivos + blancos; no equivale a sufragantes")
+    : kpi("Votantes", formatNumber(row.votantes), `${formatPct(row.participacion)} de participacion`);
 }
 
 function competitivenessBlock(base, target) {
@@ -1543,18 +1804,20 @@ function renderVoteStack(row, targetEls = els) {
   const stackEntries = rest ? [...entries, ["Otras fuerzas", rest]] : entries;
   targetEls.voteStack.innerHTML = stackEntries.map(([name, votes], index) => {
     const pct = row.positivos ? votes / row.positivos : 0;
-    return `<span style="width:${pct * 100}%;background:${forceStackColor(name, index, STACK_FALLBACK_COLORS)}" title="${name}: ${formatPct(pct)}"></span>`;
+    return `<span style="width:${pct * 100}%;background:${forceStackColor(name, index, STACK_FALLBACK_COLORS)}" title="${name}: ${formatPct(pct)} (${formatNumber(votes)})"></span>`;
   }).join("");
   targetEls.voteStackLegend.innerHTML = stackEntries.map(([name, votes], index) => {
     const pct = row.positivos ? votes / row.positivos : 0;
-    return `<div><i style="background:${forceStackColor(name, index, STACK_FALLBACK_COLORS)}"></i><span>${name}</span><b>${formatPct(pct)}</b></div>`;
+    return `<div><i style="background:${forceStackColor(name, index, STACK_FALLBACK_COLORS)}"></i><span>${name}</span><b>${formatPct(pct)} (${formatNumber(votes)})</b></div>`;
   }).join("");
 }
 
 function renderTotalVoteStack(row, targetEls = els) {
   if (!targetEls.totalVoteStack || !targetEls.totalVoteLegend) return;
+  const title = targetEls.totalVoteStack.closest(".total-vote-card")?.querySelector(".section-title");
+  if (title) title.textContent = isFiniteNumber(row.votantes) ? "Composicion del voto total" : "Composicion del total publicado";
   const total = row.votantes || TOTAL_VOTE_SEGMENTS.reduce((sum, segment) => sum + (row[segment.key] || 0), 0);
-  const entries = TOTAL_VOTE_SEGMENTS.map((segment) => ({
+  const entries = TOTAL_VOTE_SEGMENTS.filter(segment => isFiniteNumber(row[segment.key])).map((segment) => ({
     ...segment,
     votes: row[segment.key] || 0,
     pct: total ? (row[segment.key] || 0) / total : 0,
@@ -1565,7 +1828,7 @@ function renderTotalVoteStack(row, targetEls = els) {
   }).join("");
   targetEls.totalVoteLegend.innerHTML = entries.map((entry) => `
     <div><i style="background:${entry.color}"></i><span>${entry.label}</span><b>${formatPct(entry.pct)}</b></div>
-  `).join("");
+  `).join("") + (!isFiniteNumber(row.votantes) ? '<p class="published-total-note">Positivos + blancos. Otros tipos no publicados.</p>' : "");
 }
 
 function forceStackColor(name, index, fallbackColors) {
@@ -1623,8 +1886,8 @@ function renderPanel() {
     return;
   }
   els.metricsGrid.innerHTML = [
-    metricBlock("Participacion", formatPct(target?.participacion), formatPp((target?.participacion ?? 0) - (base?.participacion ?? 0))),
-    metricBlock("Ausentismo", formatPct(target?.ausentismo), formatPp((target?.ausentismo ?? 0) - (base?.ausentismo ?? 0))),
+    metricBlock("Participacion", formatPct(target?.participacion), formatPp(difference(target?.participacion, base?.participacion))),
+    metricBlock("Ausentismo", formatPct(target?.ausentismo), formatPp(difference(target?.ausentismo, base?.ausentismo))),
     metricBlock("LLA", formatPct(target?.bloques_pct?.LLA), formatPp((target?.bloques_pct?.LLA ?? 0) - (base?.bloques_pct?.LLA ?? 0))),
     metricBlock("Peronismo/K", formatPct(target?.bloques_pct?.PERONISMO_K), formatPp((target?.bloques_pct?.PERONISMO_K ?? 0) - (base?.bloques_pct?.PERONISMO_K ?? 0))),
   ].join("");
@@ -1643,8 +1906,9 @@ function setBar(bar, label, value) {
 }
 
 function activeReading(base, target) {
+  if (state.indicator === ADN_ID) return ADN_DESCRIPTION;
   if (state.activeQuestion) return assistantNarrative(state.activeQuestion);
-  const turnout = (target?.participacion ?? 0) - (base?.participacion ?? 0);
+  const turnout = difference(target?.participacion, base?.participacion);
   const force = (target?.bloques_pct?.[state.force] ?? 0) - (base?.bloques_pct?.[state.force] ?? 0);
   return `Cambio de participacion: ${formatPp(turnout)}. Cambio de ${state.force}: ${formatPp(force)}.`;
 }
@@ -1743,6 +2007,8 @@ function scatterMetricLabel(value) {
 }
 
 function refresh() {
+  syncElectionCapabilities();
+  updateMetricOptions();
   els.metricDefinition.textContent = metricDefinition();
   updateContinuitySelectionUi();
   updateMainMapUnit();
@@ -1810,6 +2076,7 @@ function updateMainMapUnit() {
 
 function setMapLevel(level) {
   if (!TERRITORY_LEVELS[level]) return;
+  level = validTerritorialLevel(level);
   if (state.continuityActive && els.continuityUnit) els.continuityUnit.value = level;
   const changed = state.mapLevel !== level;
   if (changed) {
@@ -1997,7 +2264,7 @@ function selectParty(key) {
   }
   const drawerHidden = els.circuitDrawer.classList.contains("is-hidden");
   const drawerMatches = state.drawerContext?.unit === "party" && state.drawerContext?.key === key;
-  if (state.selectedParty === key && !state.selectedCircuit && !drawerHidden && drawerMatches) {
+  if (state.selectedParty === key && !state.selectedCircuit && ((!drawerHidden && drawerMatches) || validTerritorialLevel("circuit") === "party")) {
     clearMapSelection();
     return;
   }
@@ -2029,6 +2296,7 @@ function renderMapSearchResults(query) {
 }
 
 function focusUnitOnMap(unit, key) {
+  if (validTerritorialLevel(unit) !== unit) return;
   const nextLevel = TERRITORY_LEVELS[unit] ? unit : "party";
   state.mapLevel = nextLevel;
   if (state.activeQuestion?.unit === "current") state.questionUnit = nextLevel;
@@ -2063,6 +2331,7 @@ function focusUnitOnMap(unit, key) {
 }
 
 function selectLocality(key) {
+  if (validTerritorialLevel("locality") !== "locality") return;
   if (state.continuityActive && state.continuityDetailUnit === "locality" && state.continuityDetailKey === key) {
     clearMapSelection();
     return;
@@ -2091,6 +2360,7 @@ function selectLocality(key) {
 }
 
 function selectCircuit(key) {
+  if (validTerritorialLevel("circuit") !== "circuit") return;
   if (state.continuityActive && state.continuityDetailUnit === "circuit" && state.continuityDetailKey === key) {
     clearMapSelection();
     return;
@@ -2188,7 +2458,7 @@ function updateDrawerNote(context, features) {
 }
 
 function openCircuitDrawer(unit, key) {
-  if (state.continuityActive) {
+  if (state.continuityActive || validTerritorialLevel("circuit") !== "circuit") {
     closeCircuitDrawer();
     return;
   }
@@ -2303,6 +2573,7 @@ function clearMapSelection() {
 }
 
 function clearMapSelectionFromBackground(event) {
+  if (simulatorAtlasView) return;
   if (event.originalEvent?.target?.closest?.(".leaflet-interactive")) return;
   clearMapSelection();
 }
@@ -2317,8 +2588,8 @@ function exportFilteredCsv() {
   const csvRows = rows.map((row) => [
     row.unit,
     territoryLabel(row.key, row.unit),
-    electionLabel(state.baseElection),
-    electionLabel(state.targetElection),
+    state.indicator === ADN_ID ? "" : electionLabel(state.baseElection),
+    state.indicator === ADN_ID ? "Censo 2022" : electionLabel(state.targetElection),
     metricLabel(),
     row.value,
   ]);
@@ -2505,7 +2776,7 @@ function generateReportHTML() {
   const generatedAt = new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(new Date());
   const kpis = [
     kpi("Electores", formatNumber(target.electores), electionLabel(state.targetElection)),
-    kpi("Votantes", formatNumber(target.votantes), `${formatPct(target.participacion)} de participacion`),
+    voterKpi(target),
     kpi("Participacion", formatPct(target.participacion), `Ausentismo: ${formatPct(target.ausentismo)}`),
     competitivenessBlock(base, target),
   ].join("");
@@ -2569,7 +2840,8 @@ function generateReportHTML() {
       <section class="report-section">
         <h2>Metodologia</h2>
         <div class="report-method">
-          <span><strong>Fuente:</strong> Datos electorales normalizados del tablero.</span>
+          <span><strong>Fuente:</strong> ${escapeHtml(state.indicator === ADN_ID ? ADN_DESCRIPTION : state.data.sources.find(s => s.id === state.targetElection)?.source_name || "Datos electorales normalizados del tablero.")}</span>
+          ${document.getElementById("electionCoverageNote").hidden ? "" : `<span>${escapeHtml(document.getElementById("electionCoverageNote").textContent)}</span>`}
           <span><strong>Filtros activos:</strong> ${escapeHtml(metricLabel())}${state.selectedParty ? `; partido ${escapeHtml(territoryLabel(state.selectedParty, "party"))}` : ""}${state.selectedCircuit ? `; circuito ${escapeHtml(territoryLabel(state.selectedCircuit, "circuit"))}` : ""}</span>
           <span><strong>Nivel territorial:</strong> ${escapeHtml(unitLabel(state.mapLevel, false))}</span>
           <span><strong>Eleccion utilizada:</strong> ${escapeHtml(electionLabel(state.targetElection))}</span>
@@ -2665,7 +2937,7 @@ function presentSocioVariable(variable) {
 }
 
 function profileVariablesForUnit(unit) {
-  const methods = new Set(["ratio_de_sumas", "suma", "promedio_ponderado"]);
+  const methods = new Set(["ratio_de_sumas", "suma", "promedio_ponderado", "precalculado"]);
   return (state.socioData?.metadata?.variables || [])
     .filter((variable) => variable.agregable_en?.includes(unit) && methods.has(variable.metodo_agregacion))
     .map(presentSocioVariable)
@@ -2674,6 +2946,7 @@ function profileVariablesForUnit(unit) {
 
 function profileFormattedValue(variable, value) {
   if (!isFiniteNumber(value)) return "No disponible";
+  if (variable.formato === "index") return formatIndex(value);
   if (variable.unidad === "proporción") return formatPct(value, 1);
   return formatNumber(value);
 }
@@ -2722,6 +2995,10 @@ function profileEntryTooltip(entry) {
 
 function profileFamilyChart(family, territory, { compact = false } = {}) {
   const entries = profileFamilyEntries(family, territory);
+  if (family.id === ADN_ID) {
+    const value = territory?.values?.[ADN_ID];
+    return `<p class="profile-index-value">${formatIndex(value)}</p><p class="profile-chart-note">${escapeHtml(ADN_DESCRIPTION)}${!isFiniteNumber(value) ? " Sin dato para este territorio; no se imputa cero." : ""}</p>`;
+  }
   if (!entries.length) return '<p class="profile-missing">No hay información disponible para este territorio.</p>';
   const coverageNote = family.id === "educational_climate"
     ? "Universo: hogares con clima educativo clasificable. Los casos “No corresponde” quedan fuera de esta distribución y se conservan en el control de datos."
@@ -2819,6 +3096,7 @@ function renderSocioProfile(key, unit) {
         ${profileKpi(unemployment, territory, "Desocupación", "Población en edad de trabajar")}
         ${profileKpi(nbi, territory, "Vivienda inconveniente", "Necesidades Básicas Insatisfechas")}
         ${profileKpi(health, territory, "Sin cobertura de salud", "Población")}
+        <div class="profile-kpi profile-kpi-adn"><span>${escapeHtml(ADN_NAME)}</span><strong>${formatIndex(values[ADN_ID])}</strong><small>${escapeHtml(ADN_LEGEND_LABEL)}</small></div>
       </section>
       <div class="profile-chart-grid">
         <div class="profile-chart-group">
@@ -3023,6 +3301,7 @@ function resetScatterPanelState() {
 }
 
 function applyQuestion(question) {
+  if (!questionSupported(question)) return;
   const effectiveUnit = effectiveQuestionUnit(question);
   state.activeQuestion = question;
   if (question.continuity) {
@@ -3087,6 +3366,9 @@ function scatterSocioeconomicLabel(variable) {
 
 function scatterMetric(value) {
   const fixed = [...SCATTER_METRICS, ...SCATTER_ELECTORAL_METRICS].find((metric) => metric.value === value);
+  if (value === "electoral:blanco" && state.data.sources.find(s => s.id === els.scatterElection.value)?.vote_share_basis === "valid_published") {
+    return { ...fixed, label: "Blancos sobre total publicado", definition: "Blancos / (positivos + blancos); otros tipos no publicados." };
+  }
   if (fixed) return fixed;
   if (!value?.startsWith("socio:")) return null;
   const variableId = value.slice(6);
@@ -3095,7 +3377,7 @@ function scatterMetric(value) {
   return {
     value,
     label: scatterSocioeconomicLabel(variable),
-    format: variable.unidad === "proporción" ? "pct" : "number",
+    format: variable.formato || (variable.unidad === "proporción" ? "pct" : "number"),
     definition: variable.descripcion,
     year: variable.anio,
     universe: variable.universo,
@@ -3154,7 +3436,7 @@ function scatterValue(row, metric) {
       "electoral:ausentismo": current?.ausentismo,
       "electoral:competitividad": current?.margen,
       "electoral:fuerza": current?.bloques_pct?.[els.scatterForce.value],
-      "electoral:blanco": current?.pct_blanco,
+      "electoral:blanco": current?.pct_blanco ?? current?.pct_blanco_total_publicado,
       "electoral:nulo": current?.pct_nulo,
     };
     return values[metric];
@@ -3345,6 +3627,7 @@ function addAxisText(svg, text, x, y, className, anchor) {
 
 function axisTickLabel(value, metric) {
   if (!isFiniteNumber(value)) return "s/d";
+  if (metric?.format === "index") return formatIndex(value);
   if (Math.abs(value) < 0.0005) return "0";
   if (metric?.format === "pp" || metric?.format === "pct") return `${value > 0 ? "+" : ""}${(value * 100).toFixed(1)}`;
   return formatNumber(value);
@@ -3575,21 +3858,32 @@ async function fetchJson(url) {
 }
 
 async function init() {
-  const version = "atlas-20260810-2";
-  const [data, socioData, partyGeojson, localityGeojson, circuitGeojson] = await Promise.all([
+  const version = "atlas-adn-20261002-1";
+  const [data, socioData, partyGeojson, localityGeojson, circuitGeojson, adnData] = await Promise.all([
     fetchJson(`data/electoral_data.json?v=${version}`),
     fetchJson(`data/socioeconomic_data.json?v=${version}`),
     fetchJson(`data/partidos_pba.geojson?v=${version}`),
     fetchJson(`data/localidades_pba_mas2000.geojson?v=${version}`),
     fetchJson(`data/circuitos_pba.geojson?v=${version}`),
+    fetchJson(`data/adn.json?v=${version}`),
   ]);
   state.data = data;
-  state.socioData = socioData;
+  state.adnData = adnData;
+  document.getElementById('methodologyIndexName').textContent = ADN_NAME;
+  state.socioData = attachIndex(socioData, adnData);
   state.partyGeojson = partyGeojson;
   state.localityGeojson = localityGeojson;
   state.circuitGeojson = circuitGeojson;
   state.baseElection = data.defaults.base;
   state.targetElection = data.defaults.target;
+  setupSimulator({ data, aggregateRows, formatNumber, formatPct, formatPp, kpi, escapeHtml,
+    indexAppearance: {name:ADN_NAME, legendLabel:ADN_LEGEND_LABEL, palette:ADN_PALETTE, domain:adnData.metadata.display_domain, format:formatIndex,
+      value:(key,unit='party')=>indexValue(adnData,unit,key), color:(key,unit='party')=>indexColor(indexValue(adnData,unit,key),adnData.metadata.display_domain)},
+    enterTerritoryView: enterSimulatorAtlasView,
+    updateTerritoryView: updateSimulatorAtlasView,
+    leaveTerritoryView: leaveSimulatorAtlasView,
+    showTerritoryMap: fitSimulatorSelection,
+  });
 
   updateElectionSelectors();
   renderContinuityElectionOptions();
@@ -3597,6 +3891,7 @@ async function init() {
   renderQuestions();
   setupScatterOptions();
   initDrag();
+  setupPanelResize({onResize:()=>state.map?.invalidateSize({pan:false})});
 
   state.map = L.map("map", { zoomControl: false, zoomSnap: 0.25, minZoom: 4, preferCanvas: true }).setView(state.homeView.center, state.homeView.zoom);
   L.control.zoom({ position: "bottomright" }).addTo(state.map);
@@ -3628,7 +3923,15 @@ els.modeCompare.addEventListener("click", () => { state.viewMode = "comparison";
 els.baseElection.addEventListener("change", () => { state.baseElection = els.baseElection.value; updateElectionSelectors(); refresh(); });
 els.targetElection.addEventListener("change", () => { state.targetElection = els.targetElection.value; refresh(); });
 els.compareElection.addEventListener("change", () => { state.targetElection = els.compareElection.value; els.targetElection.value = state.targetElection; refresh(); });
-els.indicator.addEventListener("change", () => { state.indicator = els.indicator.value; updateMetricOptions(); refresh(); });
+els.indicator.addEventListener("change", () => {
+  state.indicator = els.indicator.value;
+  if (state.indicator === ADN_ID) {
+    state.activeQuestion = null;
+    state.questionUnit = null;
+    closeContinuityPanel({ refreshView: false });
+  }
+  updateMetricOptions(); refresh();
+});
 els.voteType.addEventListener("change", () => { state.voteType = els.voteType.value; updateMetricOptions(); refresh(); });
 els.positiveMeasure.addEventListener("change", () => { state.positiveMeasure = els.positiveMeasure.value; updateMetricOptions(); refresh(); });
 els.force.addEventListener("change", () => { state.force = els.force.value; updateMetricOptions(); refresh(); });

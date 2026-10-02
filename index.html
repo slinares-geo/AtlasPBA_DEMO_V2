@@ -6,8 +6,10 @@
     <title>Atlas Electoral PBA</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="css/styles.css?v=atlas-20260811-1" />
-    <link rel="stylesheet" href="css/socioeconomic.css?v=atlas-20260808-8" />
+    <link rel="stylesheet" href="css/styles.css?v=atlas-adn-20261002-1" />
+    <link rel="stylesheet" href="css/panel-resize.css?v=20261002-1" />
+    <link rel="stylesheet" href="css/socioeconomic.css?v=atlas-20261002-affinity-1" />
+    <link rel="stylesheet" href="css/simulator.css?v=20261002-circuits-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -148,11 +150,13 @@
               </select>
             </label>
             <p class="metric-definition" id="metricDefinition"></p>
+            <p class="metric-definition" id="electionCoverageNote" role="status" hidden></p>
 
             <div class="panel-actions" aria-label="Accesos">
               <button id="openQuestions" type="button">Asistente</button>
               <button id="openScatter" type="button">Cruzar metricas</button>
               <button id="openContinuity" type="button" aria-pressed="false">Continuidad</button>
+              <button id="openSimulator" type="button" aria-pressed="false">Simulador de escenarios</button>
             </div>
 
             <section class="continuity-controls is-hidden" id="continuityControls" aria-label="Continuidad y alternancia electoral">
@@ -353,6 +357,7 @@
             <h3>Fuentes de datos</h3>
             <ul>
               <li>DINE / resultados electorales: <a href="https://www.argentina.gob.ar/dine/resultados-electorales" target="_blank" rel="noreferrer">ACCEDER</a></li>
+              <li>Provinciales PBA, 7 de septiembre de 2025: <a href="https://www.juntaelectoral.gba.gov.ar/escrutinio-definitivo-2025/" target="_blank" rel="noreferrer">escrutinio definitivo de la Junta Electoral</a>. Nivel incorporado: partido/distrito, sin circuitos. Diputados o Senadores segun seccion; Concejales conservados por separado en la fuente normalizada. El total publicado incluye positivos y blancos, no acredita sufragantes; participacion, ausentismo y nulos no disponibles.</li>
               <li>Cartografía de partidos de Provincia de Buenos Aires desde datos abiertos: <a href="https://portalgeoestadistico.indec.gob.ar/" target="_blank" rel="noreferrer">ACCEDER</a></li>
               <li>Cartografía digital de Circuitos Electorales de Buenos Aires, Cámara Nacional Electoral: <a href="https://mapa2.electoral.gov.ar/descargas/" target="_blank" rel="noreferrer">ACCEDER</a></li>
               <li>INDEC / Censo Nacional de Población, Hogares y Viviendas 2022, agregado desde radios censales.</li>
@@ -395,6 +400,8 @@
               <li>Utilizar el asistente para explorar preguntas analíticas frecuentes.</li>
             </ul>
 
+            <h3 id="methodologyIndexName">Índice de afinidad</h3>
+            <p>Índice experimental precalculado del Censo 2022, con referencia provincial fija. Se muestra multiplicado por 100, con un decimal: 0,425 equivale a 42,5 %. No representa porcentaje de votos ni probabilidad individual. Se conservan los pesos y las inversiones originales; los filtros no renormalizan el índice. Los faltantes no se imputan como cero.</p>
             <p class="methodology-doc-link"><a href="docs/documentacion-metodologica.md" target="_blank" rel="noreferrer">Ver documento metodológico completo</a></p>
           </div>
           <footer class="methodology-foot">
@@ -405,6 +412,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/app.js?v=atlas-20260811-3" type="module"></script>
+    <script src="js/app.js?v=atlas-affinity-20261002-1" type="module"></script>
   </body>
 </html>

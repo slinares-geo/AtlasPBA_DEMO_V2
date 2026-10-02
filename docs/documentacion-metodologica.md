@@ -148,6 +148,57 @@ Cada fila de ranking y la tabla de cruces permiten abrir una ficha socioeconómi
 
 Las matrices completas permiten auditar 14 distribuciones exhaustivas: grupos de edad, migración, clima educativo clasificable, acceso digital, NBI de vivienda, cobertura de salud, jubilación, actividad, categoría y rama ocupacional, tipo y tenencia de vivienda, hacinamiento y calidad de materiales. Cada distribución cierra en 100 % dentro de 0,01 puntos porcentuales. Clima educativo usa como denominador los hogares clasificables; los casos No corresponde, faltantes y no aplicables se conservan en el control de fuente, pero no se mezclan con la distribución sustantiva.
 
+## Afinidad Socioelectoral (clave tecnica ADN)
+
+El indice usa diez componentes del Censo 2022. La aplicacion recupera valores
+precalculados para partidos, localidades y circuitos; no recalcula el indice al
+cambiar de eleccion ni al seleccionar territorios. El nombre visible es configurable.
+
+Para cada componente se calcula el cociente entre sus conteos agregados y su
+universo. Se normaliza como `z = (x - minimo) / (maximo - minimo)`, usando los
+extremos fijos de los 1149 circuitos provinciales completos. En los componentes
+invertidos se usa `1 - z`. El puntaje es la suma de los componentes orientados
+multiplicados por sus pesos, conservados de la entrega original:
+
+| Componente | Peso | Invertido (1 - z) |
+| --- | ---: | --- |
+| Materiales de calidad I | 0,120281 | Si |
+| Obra social o prepaga | 0,115452 | No |
+| Sin obra social, prepaga ni plan | 0,112379 | Si |
+| Hacinamiento hasta 0,5 personas por cuarto | 0,110404 | Si |
+| Rama construccion | 0,106673 | No |
+| Hacinamiento desde 1,5 personas por cuarto | 0,106453 | No |
+| Desocupados / poblacion en edad de trabajar | 0,087796 | No |
+| Vivienda propia | 0,084943 | No |
+| Rama industria | 0,079236 | No |
+| Rama comercio | 0,076383 | No |
+
+Cada nivel se obtiene de sus propios conteos agregados, no promediando indices
+de unidades menores. La referencia provincial y los cocientes sin redondeo
+pueden producir valores distintos del ejemplo original de Mar Chiquita, aunque
+se conservan sus pesos y sentidos. Los parametros auditables estan en
+`data/adn.json`, bajo `metadata.parameters`.
+
+La interfaz muestra **puntaje x 100**, con un decimal y signo porcentual:
+`0.425 -> 42,5 %`. **Afinidad** es la etiqueta de la leyenda y del subtitulo del
+KPI. Esta expresion porcentual no representa votos, proporcion de personas
+afines ni probabilidad individual. No valida una capacidad predictiva electoral.
+Los pesos y su interpretacion sustantiva siguen siendo experimentales.
+
+La rampa provincial fija conserva el dominio original
+`[0.252868556343, 0.634246299338]`, mostrado como `25,3 % a 63,4 %`.
+No se renormaliza por partido, seleccion ni nivel. El redondeo es solo visual;
+los datos y CSV conservan la escala original y su precision. Los valores fuera
+de referencia no se recortan en los datos; la rampa satura en sus extremos.
+Los faltantes se muestran como `s/d` y gris, nunca como cero, y no se redistribuyen
+pesos. Hay 135 partidos y 219 localidades con puntaje y 1149 de 1157 circuitos.
+
+Se mantienen las limitaciones de correspondencia radio-circuito, la cobertura
+de localidades de mas de 2000 habitantes y dos salvedades del ejemplo:
+hacinamiento usa desde 1,5 personas por cuarto (no el titulo mayor a 2 del Excel);
+desocupacion usa poblacion en edad de trabajar y no PEA. Detalles de claves,
+fuentes y reproduccion: [integracion del indice](adn-integracion.md).
+
 ## Calidad y limitaciones de la correspondencia radio-circuito
 
 La tabla operativa `Circuitos_Radios_uno_a_muchos.xlsx` asigna cada radio a un circuito mediante el centroide del radio y se considera provisional hasta su corrección. Se conservan cuatro asignaciones interpartidarias conocidas: radios 067600613, 067601310 y 067601311 al circuito 668A, y radio 067001004 al circuito 954. Los circuitos 128, 313, 338B y 548 no tienen radios censales asociados y permanecen sin indicadores; no se imputan valores.
