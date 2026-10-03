@@ -62,7 +62,10 @@ export function setupTerritoryExplorer(host, { chartHost, summaryHost, indexAppe
     q('[data-other-votes]').textContent = n(s.otherVotes);
     q('[data-new-row]').hidden = q('[data-newcomer]').hidden = !increase;
     q('[data-new-votes]').textContent = n(s.newVotes);
-    q('[data-newcomer]').textContent = `${n(s.newVotes)} de los ${n(r.newcomers)} nuevos votantes provinciales previstos, distribuidos en proporción a las abstenciones observadas. No se cuentan todas las abstenciones como nuevos votos.`;
+    q('[data-new-row] dt').textContent = r.repeatDistribution ? 'Nuevos votos para la fuerza' : 'Nuevos votos previstos';
+    q('[data-newcomer]').textContent = r.repeatDistribution
+      ? `Distribución provincial de base: ${n(s.newVotes)} de los ${n(r.newVotePotential)} nuevos votos correspondientes a la fuerza elegida. El resto se reparte entre otras fuerzas y tipos de voto.`
+      : `${n(s.newVotes)} de los ${n(r.newcomers)} nuevos votantes provinciales previstos, distribuidos en proporción a las abstenciones observadas. No se cuentan todas las abstenciones como nuevos votos.`;
     q('[data-more]').hidden = !s.count;
     q('[data-extra]').innerHTML = [kpi('Peso sobre positivos provinciales', pct(s.weight)), kpi('Votos positivos', n(s.positivos)), kpi('Votos de la fuerza elegida', n(s.votes), `${pct(s.share)} de los positivos de la selección`), kpi('Votantes', n(s.votantes)), kpi('Electores', n(s.electores)), kpi('Abstenciones', n(s.abstentions)), kpi('Participación observada', pct(s.turnout)), kpi('Margen medio entre 1.ª y 2.ª', pp(s.mean), `Media simple · ${s.marginCount} ${plural}`), kpi('Margen mediano', pp(s.median))].join('');
     q('[data-list]').innerHTML = points.filter(p => selected.has(p.key)).sort((a,b) => a.name.localeCompare(b.name,'es')).map(p => `<button type="button" data-remove="${esc(p.key)}">Quitar ${esc(p.name)}</button>`).join('') || 'Sin selección';

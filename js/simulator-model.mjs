@@ -18,7 +18,10 @@ export function observe(row) {
     || forces.reduce((s, f) => s + f.votes, 0) !== positivos) {
     throw new Error('Los totales observados no permiten construir un escenario consistente.');
   }
-  return Object.freeze({ electores, votantes, positivos, turnout: votantes / electores,
+  const nonPositive = Object.fromEntries(['blanco','nulo','impugnado','recurrido'].map(key=>[key,row[key]]));
+  const repeatAvailable = Object.values(nonPositive).every(n=>Number.isSafeInteger(n) && n>=0)
+    && Object.values(nonPositive).reduce((a,b)=>a+b,positivos) === votantes;
+  return Object.freeze({ electores, votantes, positivos, nonPositive:Object.freeze(nonPositive), repeatAvailable, turnout: votantes / electores,
     forces: Object.freeze(forces.map(Object.freeze)) });
 }
 
@@ -33,17 +36,34 @@ export function simulate(base, params) {
     || !Number.isFinite(turnout) || turnout < base.turnout || turnout > 1) throw new Error('Porcentaje fuera del rango permitido.');
   const voters = turnout === base.turnout ? base.votantes : Math.min(base.electores, Math.round(turnout * base.electores));
   const newcomers = voters - base.votantes;
-  const denominator = base.positivos + newcomers;
+  const repeatDistribution = Boolean(params.increase && params.repeatDistribution);
+  if (repeatDistribution && !base.repeatAvailable) throw new Error('La distribución de tipos de voto no concilia con los votantes.');
+  const newByForce = {}, newByType = {};
+  if (repeatDistribution) {
+    const categories = [...base.forces.map(f=>({key:f.name,kind:'force',votes:f.votes})),
+      ...Object.entries(base.nonPositive).map(([key,votes])=>({key,kind:'type',votes}))]
+      .map(c=>{const exact=newcomers*c.votes/base.votantes;return {...c,count:Math.floor(exact),remainder:exact-Math.floor(exact)};});
+    let pending = newcomers-categories.reduce((sum,c)=>sum+c.count,0);
+    categories.sort((a,b)=>b.remainder-a.remainder || `${a.kind}:${a.key}`.localeCompare(`${b.kind}:${b.key}`,'es'));
+    for (const c of categories) {
+      if (pending>0) {c.count++;pending--;}
+      (c.kind==='force' ? newByForce : newByType)[c.key]=c.count;
+    }
+  }
+  const newPositives = repeatDistribution ? Object.values(newByForce).reduce((a,b)=>a+b,0) : newcomers;
+  const newVotePotential = repeatDistribution ? newByForce[force.name] : newcomers;
+  const denominator = base.positivos + newPositives;
   // The epsilon only removes floating-point noise at exact integer boundaries.
   const required = share === observedShare && !newcomers ? force.votes : Math.ceil(share * denominator - 1e-8);
   const additional = required - force.votes;
-  const transferred = Math.min(additional, otherVotes);
-  const fromNew = Math.min(additional - transferred, newcomers);
-  const missing = additional - transferred - fromNew;
+  const transferred = Math.min(Math.max(0,additional-(repeatDistribution ? newVotePotential : 0)), otherVotes);
+  const fromNew = repeatDistribution ? newVotePotential : Math.min(additional - transferred, newcomers);
+  const missing = Math.max(0,additional - transferred - fromNew);
   const achieved = force.votes + transferred + fromNew;
   return { force, otherVotes, rank: 1 + base.forces.filter(f => f.votes > force.votes).length,
     observedShare, share, voters, turnout: voters / base.electores, newcomers, denominator,
-    required, additional, transferred, fromNew, unassigned: newcomers - fromNew,
-    remaining: otherVotes - transferred, missing, achieved,
+    repeatDistribution, newByForce, newByType, newPositives, newVotePotential,
+    required, additional, transferred, fromNew, unassigned: repeatDistribution ? 0 : newcomers - fromNew,
+    remaining: otherVotes - transferred + (repeatDistribution ? newPositives-fromNew : 0), missing, achieved,
     achievedShare: achieved / denominator, feasible: missing === 0 };
 }

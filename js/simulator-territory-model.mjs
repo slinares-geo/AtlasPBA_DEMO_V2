@@ -52,14 +52,23 @@ export function circuitCoverage(parties, circuits) {
   return groups;
 }
 
+export function allocateNewContribution(points, base, scenario) {
+  const newcomers = allocateNewVoters(points,base,scenario);
+  if (!scenario.repeatDistribution) return newcomers;
+  return allocateNewVoters(points.map(p=>({...p,abstentions:newcomers.get(p.key)})),
+    {electores:scenario.newcomers,votantes:0},{newcomers:scenario.newVotePotential});
+}
+
 // Preserve each party's integer quota when moving to its circuits. Selection never
 // participates in allocation, so deselection cannot redistribute potential.
 export function allocateCircuitNewVoters(parties, circuits, base, scenario) {
   const groups = circuitCoverage(parties,circuits);
   const partyAllocation = allocateNewVoters(territoryPoints(parties,scenario.force.name),base,scenario);
+  const partyContribution = allocateNewContribution(territoryPoints(parties,scenario.force.name),base,scenario);
   const result = new Map();
   for (const [key,rows] of groups) {
-    const allocation = allocateNewVoters(territoryPoints(Object.fromEntries(rows),scenario.force.name,'circuit'),parties[key],{newcomers:partyAllocation.get(key)});
+    const allocation = allocateNewContribution(territoryPoints(Object.fromEntries(rows),scenario.force.name,'circuit'),parties[key],
+      {newcomers:partyAllocation.get(key),repeatDistribution:scenario.repeatDistribution,newVotePotential:partyContribution.get(key)});
     allocation.forEach((value,circuit)=>result.set(circuit,value));
   }
   return result;
@@ -72,7 +81,7 @@ export function summarizeTerritories(points, selection, base, scenario, aggregat
   const mid = Math.floor(margins.length / 2);
   const votes = totals.fuerzas[scenario.force.name] || 0;
   const abstentions = totals.electores - totals.votantes;
-  const allocation = fixedAllocation || allocateNewVoters(points, base, scenario);
+  const allocation = fixedAllocation || allocateNewContribution(points, base, scenario);
   const otherVotes = totals.positivos - votes;
   const newVotes = chosen.reduce((sum,p) => sum + allocation.get(p.key), 0);
   const potential = otherVotes + newVotes;

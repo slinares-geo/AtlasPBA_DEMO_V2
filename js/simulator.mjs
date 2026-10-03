@@ -14,11 +14,12 @@ export function setupSimulator({ data, indexAppearance, aggregateRows, formatNum
     <label>¿Qué porcentaje buscás alcanzar?<output id="simShareValue" for="simShare"></output><input id="simShare" type="range" max="100" step="any"></label>
     <p class="sim-help">Sobre votos positivos, a partir del resultado observado.</p>
     <label class="sim-check"><input id="simIncrease" type="checkbox"> Incluir un aumento de participación</label>
+    <div id="simRepeatLabel" hidden><label class="sim-check"><input id="simRepeat" type="checkbox"> Repetir la distribución de la elección base</label></div>
     <div id="simTurnoutLabel" hidden><label>¿Qué participación esperás?<output id="simTurnoutValue" for="simTurnout"></output><input id="simTurnout" type="range" max="100" step="any"></label></div>
     <button id="simReset" type="button">Restablecer escenario</button><p class="sim-help">Conserva la fuerza y los partidos elegidos.</p><p class="sim-help">Es una simulación, no una predicción.</p></section>
     <section class="sim-result" aria-label="Resultado del escenario"><h2>Resultado del escenario</h2><div id="simKpis" class="sim-kpis"></div><p id="simStatus" role="status"></p><div id="simComposition" class="sim-composition"></div>
     <section class="sim-comparison"><h3>Comparación del escenario</h3><div class="sim-table"><table><thead><tr><th>Indicador</th><th>Observado</th><th>Escenario</th><th>Diferencia</th></tr></thead><tbody id="simComparison"></tbody></table></div></section>
-    <details><summary>Cómo funciona el modelo</summary><p>El escenario toma toda la provincia, sin aplicar los filtros del Atlas. Los porcentajes se calculan sobre votos positivos. El padrón y los datos observados no se modifican.</p><p>Para cubrir el objetivo se consideran primero votos de otras fuerzas y, si aumentás la participación, nuevos votos. Ese potencial no significa que los votos se transfieran efectivamente ni mide la probabilidad de conseguirlos.</p><p>Cada nuevo votante aporta un voto positivo. Solo se asignan los votos necesarios; el resto queda sin asignar. Los votos requeridos se redondean hacia arriba y los votantes al entero más próximo. Es una simulación, no una predicción.</p><p id="simMetadata"></p></details>
+    <details><summary>Cómo funciona el modelo</summary><p>El escenario toma toda la provincia, sin aplicar los filtros del Atlas. Los porcentajes se calculan sobre votos positivos. El padrón y los datos observados no se modifican.</p><p id="simRule"></p><p id="simVoteTypes" hidden></p><p>Ese potencial no significa que los votos se transfieran efectivamente ni mide la probabilidad de conseguirlos. Los votos requeridos se redondean hacia arriba y los votantes al entero más próximo.</p><p id="simMetadata"></p></details>
     <button id="simExplore" class="sim-primary" type="button">Explorar partidos →</button></section></div>`;
   document.body.append(dialog);
   const shell = document.querySelector('.app-shell');
@@ -53,7 +54,7 @@ export function setupSimulator({ data, indexAppearance, aggregateRows, formatNum
   });
   function reset(force = params?.force || base.forces[0].name) {
     const observed = base.forces.find(f => f.name === force).votes / base.positivos;
-    params = { force, share: observed, increase: false, turnout: base.turnout };
+    params = { force, share: observed, increase: false, repeatDistribution:false, turnout: base.turnout };
     el('Force').value = force;
     el('Share').min = String(observed * 100);
     el('Turnout').min = String(base.turnout * 100);
@@ -68,6 +69,15 @@ export function setupSimulator({ data, indexAppearance, aggregateRows, formatNum
       el(id).setAttribute('aria-valuetext', pct(value, 2));
     }
     el('TurnoutLabel').hidden = !params.increase;
+    el('RepeatLabel').hidden = !params.increase;
+    el('Repeat').checked = params.repeatDistribution;
+    el('Repeat').disabled = !base.repeatAvailable;
+    el('Repeat').title = base.repeatAvailable ? '' : 'La elección no tiene un desglose completo de tipos de voto.';
+    el('Rule').textContent = r.repeatDistribution
+      ? 'Los nuevos votantes repiten la distribución provincial de la elección base entre fuerzas y tipos de voto. Se suma el aporte de la fuerza elegida y se calcula cuánto falta cubrir con votos de otras fuerzas. Solo los nuevos positivos aumentan el denominador del objetivo.'
+      : 'Cada nuevo votante aporta un positivo disponible para la fuerza elegida. Para cubrir el objetivo se consideran primero votos de otras fuerzas y después nuevos votos. Solo se asignan los necesarios; el resto queda sin asignar.';
+    el('VoteTypes').hidden = !r.repeatDistribution;
+    el('VoteTypes').textContent = r.repeatDistribution ? `Nuevos votos: ${n(r.newPositives)} positivos; ${n(r.newByType.blanco)} blancos; ${n(r.newByType.nulo)} nulos; ${n(r.newByType.impugnado)} impugnados; ${n(r.newByType.recurrido)} recurridos.` : '';
     const unchanged = params.share === r.observedShare && !params.increase;
     el('Status').textContent = unchanged ? 'Todavía no modificaste el resultado observado.' : r.feasible ? 'Hay potencial provincial suficiente para el objetivo bajo estos supuestos.' : `Con estas fuentes se llega a ${pct(r.achievedShare, 1)}; faltan ${n(r.missing)} votos para alcanzar el objetivo de ${pct(r.share, 1)}.`;
     el('Status').className = r.feasible ? 'sim-status' : 'sim-warning';
@@ -76,7 +86,7 @@ export function setupSimulator({ data, indexAppearance, aggregateRows, formatNum
       kpi('Porcentaje objetivo', pct(r.share, 1), r.feasible ? 'Objetivo alcanzable' : `Brecha: ${pp(r.share - r.achievedShare, 1)}`),
       kpi('Votos adicionales necesarios', n(r.additional), 'Para el objetivo solicitado'),
     ].join('');
-    el('Composition').innerHTML = `<p>Para este escenario: <strong>${n(r.transferred)} votos</strong> de otras fuerzas.${params.increase ? ` Nuevos votos utilizados: <strong>${n(r.fromNew)}</strong> de ${n(r.newcomers)} nuevos votantes; ${n(r.unassigned)} sin asignar.` : ' La participación no cambia.'}</p>`;
+    el('Composition').innerHTML = `<p>Para este escenario: <strong>${n(r.transferred)} votos</strong> de otras fuerzas.${params.increase ? r.repeatDistribution ? ` De ${n(r.newcomers)} nuevos votantes, <strong>${n(r.fromNew)}</strong> corresponden a la fuerza elegida según la distribución provincial de base.` : ` Nuevos votos utilizados: <strong>${n(r.fromNew)}</strong> de ${n(r.newcomers)} nuevos votantes; ${n(r.unassigned)} sin asignar.` : ' La participación no cambia.'}</p>`;
     const rows = [
       ['Votos de la fuerza elegida', r.force.votes, r.achieved, n, n],
       ['% de la fuerza elegida', r.observedShare, r.achievedShare, v => pct(v, 3), v => pp(v, 3)],
@@ -171,7 +181,8 @@ export function setupSimulator({ data, indexAppearance, aggregateRows, formatNum
       el(id).dispatchEvent(new Event('input', {bubbles:true}));
     });
   }
-  el('Increase').addEventListener('change', () => { params.increase = el('Increase').checked; params.turnout = base.turnout; render(); });
+  el('Increase').addEventListener('change', () => { params.increase = el('Increase').checked; params.repeatDistribution = false; params.turnout = base.turnout; render(); });
+  el('Repeat').addEventListener('change', () => { params.repeatDistribution = el('Repeat').checked; render(); });
   el('Reset').addEventListener('click', () => reset());
   el('Close').addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => {

@@ -67,6 +67,34 @@ Editar escenario abre de nuevo la ventana provincial; cerrarla o Escape regresa 
 
 Ampliar gráfico mueve la misma instancia a una **ventana flotante no modal**, conservando selección, escala y acercamiento. Se arrastra desde el encabezado y se redimensiona desde la esquina inferior derecha. El mapa y la lista siguen disponibles. Acoplar gráfico o Escape devuelve el scatter a su panel; ese Escape no sale de la exploración. Al volver al Atlas también se acopla automáticamente. La ventana se mantiene dentro de los límites visibles al cambiar el tamaño de pantalla.
 
+## Repetir la distribucion de la eleccion base
+
+Al activar el aumento de participacion aparece un unico checkbox, desmarcado
+por defecto: **Repetir la distribucion de la eleccion base**. Desmarcado conserva
+los supuestos anteriores: todos los nuevos votantes aportan positivos disponibles.
+Marcado reparte los nuevos votantes segun las proporciones provinciales de cada
+fuerza, blancos, nulos, impugnados y recurridos, sobre votantes observados.
+Se usan restos mayores para conservar cantidades enteras y el total exacto.
+
+Solo los nuevos positivos aumentan el denominador del objetivo. Se asignan los
+nuevos votos de la fuerza elegida y se calcula la transferencia necesaria desde
+los votos observados de las demas fuerzas. Los nuevos votos de otras fuerzas y
+los no positivos quedan asignados y no vuelven a contarse como potencial.
+Un objetivo puede resultar inalcanzable. Los pequenos excedentes por redondeo
+se conservan, sin retirar votos ya asignados.
+
+El potencial territorial suma los votos observados de otras fuerzas y la parte
+de los nuevos votos correspondiente a la fuerza elegida. Primero se distribuyen
+los nuevos votantes por abstenciones, luego su aporte a la fuerza proporcionalmente
+a esas cuotas enteras. Se conserva la cuota de cada partido al pasar a circuitos;
+seleccionar o quitar territorios no redistribuye votos. El supuesto partidario es
+provincial, no utiliza la distribucion local ni Afinidad Socioelectoral.
+
+Desactivar y volver a activar el aumento, restablecer el escenario o cambiar de
+fuerza deja nuevamente el checkbox desmarcado. Editar o cerrar y reabrir conserva
+el modo elegido. Si los tipos de voto no concilian con votantes, esta opcion se
+deshabilita. El detalle por tipo se consulta en **Como funciona el modelo**.
+
 ## Verificación reproducible
 
 - `node tools/test_simulator.mjs`: todas las fuerzas, identidad inicial, participación constante y ampliada, conservación, límites, empates y parámetros inválidos.

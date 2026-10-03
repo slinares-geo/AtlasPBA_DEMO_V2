@@ -46,3 +46,24 @@ future.sources.push({ id: 'future', year: '2030', label: 'Futura' });
 future.party.elections.future = future.party.elections[source.id];
 assert.equal(latestElection(future).source.id, 'future');
 console.log(`OK: ${count} escenarios provinciales, identidad inicial, conservación, límites, empates, validaciones, inmutabilidad y elección dinámica.`);
+
+const distributionBase=observe({electores:200,votantes:100,positivos:80,blanco:10,nulo:6,impugnado:2,recurrido:2,fuerzas:{A:40,B:24,C:16}});
+const distributed=simulate(distributionBase,{force:'A',share:.75,increase:true,turnout:1,repeatDistribution:true});
+assert.deepEqual(distributed.newByForce,{A:40,B:24,C:16});
+assert.deepEqual(distributed.newByType,{blanco:10,nulo:6,impugnado:2,recurrido:2});
+assert.equal(distributed.denominator,160);
+assert.equal(distributed.fromNew,40);
+assert.equal(distributed.transferred,40);
+assert.equal(distributed.achieved,120);
+const unreachable=simulate(distributionBase,{force:'A',share:1,increase:true,turnout:1,repeatDistribution:true});
+assert.equal(unreachable.missing,40);
+assert.equal(unreachable.feasible,false);
+for(const force of distributionBase.forces) for(const newcomers of [0,1,3,17,99,100]) {
+ const r=simulate(distributionBase,{force:force.name,share:1,increase:true,turnout:(100+newcomers)/200,repeatDistribution:true});
+ assert.equal(Object.values(r.newByForce).concat(Object.values(r.newByType)).reduce((a,b)=>a+b,0),newcomers);
+ assert.equal(r.achieved+r.remaining,r.denominator);
+ assert.equal(r.denominator+20+Object.values(r.newByType).reduce((a,b)=>a+b,0),r.voters);
+ assert.equal(r.newVotePotential,r.newByForce[force.name]);
+}
+assert.throws(()=>simulate(base,{force:base.forces[0].name,share:1,increase:true,turnout:1,repeatDistribution:true}),/distribución/);
+console.log('OK distribución: fuerzas, blancos, nulos, impugnados, recurridos, enteros, conservación y objetivos inalcanzables.');
