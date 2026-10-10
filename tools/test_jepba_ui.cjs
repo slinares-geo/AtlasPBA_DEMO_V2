@@ -29,6 +29,14 @@ window.__jepba = {
     await page.locator('#loading.is-hidden').waitFor({state:'attached'});
     const snap = () => page.evaluate(() => window.__jepba.snapshot());
     const legacy = (await snap()).target;
+    await page.locator('#indicator').selectOption('participacion');
+    assert.equal(await page.locator(`#targetElection option[value="${id}"]`).count(),0);
+    await page.locator('#modeCompare').click();
+    assert.equal(await page.locator(`#baseElection option[value="${id}"]`).count(),0);
+    assert.equal(await page.locator(`#compareElection option[value="${id}"]`).count(),0);
+    await page.locator('#indicator').selectOption('votos');
+    assert.equal(await page.locator(`#compareElection option[value="${id}"]`).count(),1);
+    await page.locator('#modeElection').click();
     await page.locator('#mapLevelCircuit').click();
     await page.evaluate(()=>window.__jepba.selectParty('06007'));
     await page.locator('#pinDrawer').click();
@@ -74,10 +82,18 @@ window.__jepba = {
     await page.locator('#targetElection').selectOption(id);
     assert.equal((await snap()).unit,'party');
     await page.locator('#openScatter').click();
-    await page.locator('#scatterElection').selectOption(id);
+    assert.equal(await page.locator('#scatterElection').isDisabled(),true);
+    assert.match(await page.locator('#scatterMeta').textContent(),/no interviene/);
     await page.locator('#scatterX').selectOption('electoral:blanco');
+    await page.locator('#scatterElection').selectOption(id);
     assert.equal(await page.locator('#scatterUnit').inputValue(),'party');
-    assert.equal(await page.locator('#scatterX option[value="electoral:participacion"]').evaluate(o=>o.disabled),true);
+    assert.equal(await page.locator('#scatterElection').isDisabled(),false);
+    assert.match(await page.locator('#scatterMeta').textContent(),/Provinciales PBA/);
+    await page.locator('#scatterElection').selectOption(legacy);
+    const referenceLabel = await page.locator('#scatterElection option:checked').textContent();
+    assert.ok((await page.locator('#scatterMeta').textContent()).startsWith(`Voto en blanco: ${referenceLabel}`));
+    await page.locator('#scatterX').selectOption('electoral:participacion');
+    assert.equal(await page.locator(`#scatterElection option[value="${id}"]`).count(),0);
     await page.locator('#closeScatter').click();
     await page.locator('#openContinuity').click();
     assert.equal((await snap()).unit,'party');
@@ -117,6 +133,11 @@ window.__jepba = {
     await page.waitForTimeout(350);
     await page.screenshot({path:path.join(require('node:os').tmpdir(),'jepba-mobile.png'),fullPage:true});
     assert.equal(await page.locator('#mapLevelCircuit').isVisible(),false);
+    assert.equal(await page.locator('[data-id="blanco-nulo-participacion"]').count(),0);
+    assert.equal(await page.locator('[data-id="socio-hacinamiento-participacion"]').count(),0);
+    assert.equal(await page.locator('#scatterX option[value="blanco_delta"]').count(),1);
+    assert.equal(await page.locator('#scatterX option[value="nulo_delta"]').count(),1);
+    assert.equal(await page.locator('#scatterX option[value="socio:hacin_6P"]').count(),1);
     assert.deepEqual(errors,[]);
     console.log('PBA 2025 UI: levels, metrics, comparison, scatter, continuity, painted map, desktop/mobile OK');
   } finally { await browser.close(); }

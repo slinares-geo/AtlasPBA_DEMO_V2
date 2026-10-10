@@ -227,17 +227,6 @@ const QUESTIONS = [
     scatter: { unit: "current", x: "socio:nbi_tot_1P", y: "electoral:fuerza", force: "PERONISMO_K", mode: "highlight" },
   },
   {
-    id: "socio-hacinamiento-participacion",
-    group: "Cruces socioelectorales",
-    label: "Hacinamiento y participación",
-    description: "Cruza hacinamiento crítico del Censo 2022 con participación electoral y excluye territorios sin observaciones completas.",
-    mode: "target",
-    indicator: "participacion",
-    sort: "desc",
-    unit: "current",
-    scatter: { unit: "current", x: "socio:hacin_6P", y: "electoral:participacion", mode: "highlight" },
-  },
-  {
     id: "socio-clima-alto-peronismo",
     group: "Cruces socioelectorales",
     label: "Clima educativo alto (%)",
@@ -385,18 +374,6 @@ const QUESTIONS = [
     sort: "desc",
     unit: "current",
   },
-  {
-    id: "blanco-nulo-participacion",
-    group: "Voto blanco y nulo",
-    label: "Blanco, nulo y participación",
-    description: "Cruza voto blanco con participación para explorar patrones territoriales atípicos.",
-    mode: "comparison",
-    indicator: "votos",
-    voteType: "blanco",
-    sort: "abs",
-    unit: "current",
-    scatter: { unit: "current", x: "blanco_delta", y: "nulo_delta", mode: "highlight" },
-  },
 ];
 
 const QUESTION_GROUP_ORDER = [
@@ -406,7 +383,6 @@ const QUESTION_GROUP_ORDER = [
   "Zonas de debilidad",
   "Competitividad electoral",
   "Ausentismo",
-  "Voto blanco y nulo",
   "Cruces socioelectorales",
 ];
 
@@ -598,12 +574,55 @@ function sourceHasVoters(id) {
   return state.data.sources.find(source => source.id === id)?.voter_total_available !== false;
 }
 
+function sourceSupportsActiveMetric(source) {
+  if (["participacion", "ausentismo"].includes(state.indicator)) return sourceHasVoters(source.id);
+  if (state.indicator !== "votos") return true;
+  if (!commonCapabilities(state.data, [source.id], "available_vote_types").includes(state.voteType)) return false;
+  if (state.voteType === "positivo" && !commonCapabilities(state.data, [source.id], "available_positive_measures").includes(state.positiveMeasure)) return false;
+  if (state.viewMode === "comparison" && state.voteType === "blanco") {
+    const basis = source.vote_share_basis || "all_cast";
+    const comparableSources = state.data.sources.filter((candidate) =>
+      (candidate.vote_share_basis || "all_cast") === basis
+      && commonCapabilities(state.data, [candidate.id], "available_vote_types").includes("blanco")
+    );
+    return comparableSources.length >= 2;
+  }
+  return true;
+}
+
 function scatterMetricSupported(value) {
   if (!value || value.startsWith("socio:")) return true;
-  const ids = value.startsWith("electoral:") ? [els.scatterElection.value || state.targetElection] : [state.baseElection, state.targetElection];
+  if (value.startsWith("electoral:")) return state.data.sources.some((source) => sourceSupportsScatterMetric(source, value));
+  const ids = [state.baseElection, state.targetElection];
   if (/participacion|ausentismo/.test(value)) return ids.every(sourceHasVoters);
   if (/blanco|nulo/.test(value)) return commonCapabilities(state.data, ids, "available_vote_types").includes(value.includes("blanco") ? "blanco" : "nulo");
   return true;
+}
+
+function sourceSupportsScatterMetric(source, value) {
+  if (!value?.startsWith("electoral:")) return true;
+  if (/participacion|ausentismo/.test(value)) return sourceHasVoters(source.id);
+  if (/blanco|nulo/.test(value)) return commonCapabilities(state.data, [source.id], "available_vote_types").includes(value.includes("blanco") ? "blanco" : "nulo");
+  return true;
+}
+
+function scatterUsesReferenceElection() {
+  return [els.scatterX.value, els.scatterY.value].some((value) => value.startsWith("electoral:"));
+}
+
+function updateScatterElectionOptions() {
+  const previous = els.scatterElection.value || state.targetElection;
+  const metrics = [els.scatterX.value, els.scatterY.value].filter((value) => value.startsWith("electoral:"));
+  const sources = state.data.sources.filter((source) => metrics.every((value) => sourceSupportsScatterMetric(source, value)));
+  els.scatterElection.innerHTML = sources.map((source) => `<option value="${source.id}">${escapeHtml(source.label)}</option>`).join("");
+  els.scatterElection.value = sources.some((source) => source.id === previous)
+    ? previous
+    : sources.some((source) => source.id === state.targetElection) ? state.targetElection : sources[0]?.id || "";
+  const active = scatterUsesReferenceElection();
+  els.scatterElection.disabled = !active;
+  const label = els.scatterElection.closest("label");
+  label?.classList.toggle("is-disabled", !active);
+  if (label) label.title = active ? "" : "Se utiliza sólo con métricas electorales de una elección; los cambios usan Base y Objetivo del panel general.";
 }
 
 function questionSupported(question) {
@@ -616,6 +635,7 @@ function questionSupported(question) {
 }
 
 function syncElectionCapabilities() {
+  if (isScatterOpen()) updateScatterElectionOptions();
   const levels = commonLevels(state.data, territorialElectionIds());
   const changed = !levels.includes(state.mapLevel);
   if (changed) {
@@ -646,6 +666,7 @@ function syncElectionCapabilities() {
     [...control.options].forEach(option => { option.hidden = option.disabled = !scatterMetricSupported(option.value); });
     if (control.selectedOptions[0]?.disabled) control.value = control === els.scatterX ? "peronismo_delta" : "margen_delta";
   }
+  if (isScatterOpen()) updateScatterElectionOptions();
   if (state.activeQuestion && !questionSupported(state.activeQuestion)) {
     state.activeQuestion = null;
     state.questionUnit = null;
@@ -1191,9 +1212,15 @@ function bindPolygonHover(layer, styleFn) {
 }
 
 function updateElectionSelectors() {
-  const sources = state.data.sources;
+  const sources = state.data.sources.filter(sourceSupportsActiveMetric);
+  if (!sources.some((source) => source.id === state.baseElection)) {
+    state.baseElection = sources.find((source) => source.id !== state.targetElection)?.id || sources[0]?.id || state.baseElection;
+  }
+  if (!sources.some((source) => source.id === state.targetElection)) {
+    state.targetElection = sources.find((source) => source.id !== state.baseElection)?.id || sources[0]?.id || state.targetElection;
+  }
   const options = sources.map((source) => `<option value="${source.id}">${source.label}</option>`).join("");
-  if (state.targetElection === state.baseElection) {
+  if (state.viewMode === "comparison" && state.targetElection === state.baseElection) {
     state.targetElection = sources.find((source) => source.id !== state.baseElection)?.id || state.targetElection;
   }
   const compareOptions = sources
@@ -1219,6 +1246,7 @@ function updateMetricOptions() {
   if (!list.some((metric) => metric.value === state.indicator)) state.indicator = list[0].value;
   els.indicator.innerHTML = list.map((metric) => `<option value="${metric.value}">${escapeHtml(metric.label)}</option>`).join("");
   els.indicator.value = state.indicator;
+  updateElectionSelectors();
   const isCompare = state.viewMode === "comparison";
   const isVotes = state.indicator === "votos";
   const isPositive = isVotes && state.voteType === "positivo";
@@ -3402,10 +3430,7 @@ function setupScatterOptions() {
   els.scatterY.innerHTML = options;
   els.scatterX.value = "peronismo_delta";
   els.scatterY.value = "margen_delta";
-  els.scatterElection.innerHTML = state.data.sources
-    .map((source) => `<option value="${source.id}">${escapeHtml(source.label)}</option>`)
-    .join("");
-  els.scatterElection.value = state.targetElection;
+  updateScatterElectionOptions();
   els.scatterForce.value = "PERONISMO_K";
 }
 
@@ -3484,7 +3509,10 @@ function renderScatterMetadata({ xMetric, yMetric, electionId }) {
     if (metric.value.startsWith("electoral:")) return `${metric.label}: ${electionLabel(electionId)}`;
     return `${metric.label}: diferencia entre ${electionLabel(state.baseElection)} y ${electionLabel(state.targetElection)}`;
   };
-  els.scatterMeta.textContent = `${describe(xMetric)}. ${describe(yMetric)}.`;
+  const referenceNote = scatterUsesReferenceElection()
+    ? ""
+    : " La elección de referencia no interviene: las variaciones usan Base y Objetivo del panel general.";
+  els.scatterMeta.textContent = `${describe(xMetric)}. ${describe(yMetric)}.${referenceNote}`;
 }
 
 function renderScatterTable({ points, xMetric, yMetric }) {

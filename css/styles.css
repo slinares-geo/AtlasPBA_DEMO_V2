@@ -158,6 +158,14 @@ button {
   letter-spacing: 0.06em;
 }
 
+.scatter-controls label.is-disabled {
+  opacity: 0.58;
+}
+
+.scatter-controls label.is-disabled select {
+  cursor: not-allowed;
+}
+
 select {
   width: 100%;
   min-width: 0;
