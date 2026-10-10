@@ -82,6 +82,11 @@ window.__jepba = {
     await page.locator('#targetElection').selectOption(id);
     assert.equal((await snap()).unit,'party');
     await page.locator('#openScatter').click();
+    const scatterLayers = await page.evaluate(() => ({
+      panel: Number.parseInt(getComputedStyle(document.querySelector('#scatterPanel')).zIndex, 10),
+      mapControls: Number.parseInt(getComputedStyle(document.querySelector('#map .leaflet-top')).zIndex, 10),
+    }));
+    assert.ok(scatterLayers.panel > scatterLayers.mapControls, `El panel de cruces (${scatterLayers.panel}) debe quedar sobre los controles del mapa (${scatterLayers.mapControls})`);
     assert.equal(await page.locator('#scatterElection').isDisabled(),true);
     assert.match(await page.locator('#scatterMeta').textContent(),/no interviene/);
     await page.locator('#scatterX').selectOption('electoral:blanco');

@@ -864,7 +864,7 @@ select:focus {
 
 .scatter-panel {
   position: fixed;
-  z-index: 900;
+  z-index: 1050;
   left: 320px;
   top: 72px;
   width: min(760px, calc(100vw - 360px));
