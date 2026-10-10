@@ -9,7 +9,10 @@ const tmp=require('node:os').tmpdir();
   const page=await browser.newPage({viewport:{width:1366,height:768}}), errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.route(/\/js\/app\.js(?:\?|$)/,async route=>route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(__dirname,'../js/app.js'),'utf8')+`
-window.__layout={color:key=>simulatorAtlasView.layer.getLayers().find(l=>l.feature.properties.key===key).options.fillColor};`}));
+  window.__layout={
+    color:key=>simulatorAtlasView.layer.getLayers().find(l=>l.feature.properties.key===key).options.fillColor,
+    rankingValues:()=>[...document.querySelectorAll('.ranking-item')].map(node=>valueFor(node.dataset.key,node.dataset.unit)),
+  };`}));
   const ready=async()=>{await page.locator('#loading.is-hidden').waitFor({state:'attached'});await page.waitForTimeout(150);};
   await page.goto('http://127.0.0.1:8765',{waitUntil:'domcontentloaded'});await ready();
   const box=selector=>page.locator(selector).boundingBox();
@@ -20,10 +23,19 @@ window.__layout={color:key=>simulatorAtlasView.layer.getLayers().find(l=>l.featu
   const beforeBottom=await box('.map-pane');await drag('bottom',0,-55);assert.ok((await box('.map-pane')).height<beforeBottom.height-40);
   const saved=await box('.map-pane');await page.reload({waitUntil:'domcontentloaded'});await ready();
   for(const k of ['x','width','height'])assert.ok(Math.abs((await box('.map-pane'))[k]-saved[k])<3,'persistence '+k);
-  for(const key of ['left','right','bottom'])await page.locator(`[data-resize="${key}"]`).dblclick();
-  await page.waitForTimeout(200);
-  assert.ok(Math.abs((await box('.map-pane')).width-original.width)<3,'reset');
-  await page.locator('#openSimulator').click();
+   for(const key of ['left','right','bottom'])await page.locator(`[data-resize="${key}"]`).dblclick();
+   await page.waitForTimeout(200);
+   assert.ok(Math.abs((await box('.map-pane')).width-original.width)<3,'reset');
+   await page.locator('#indicator').selectOption('competitividad');await page.waitForTimeout(200);
+   const competitiveness=await page.evaluate(()=>window.__layout.rankingValues());
+   assert.ok(competitiveness.length>1 && competitiveness[0]<=competitiveness.at(-1),'competitiveness ranks the smallest gap first');
+   await page.locator('#openContinuity').click();await page.waitForTimeout(250);
+   assert.equal(await page.locator('[data-resize="right"]:visible').count(),1,'continuity exposes ranking width handle');
+   assert.equal(await page.locator('[data-resize="bottom"]:visible').count(),0,'continuity keeps its vertical layout fixed');
+   const continuityRanking=await box('section.ranking-panel');await drag('right',-50,0);
+   assert.ok((await box('section.ranking-panel')).width>continuityRanking.width+35,'continuity ranking width resizes');
+   await page.locator('#closeContinuity').click();await page.locator('[data-resize="right"]').dblclick();await page.waitForTimeout(200);
+   await page.locator('#openSimulator').click();
   assert.equal(await page.locator('.simulator input[type="number"]').count(),0);
   assert.doesNotMatch(await page.locator('.sim-eyebrow').textContent(),/hipot/i);
   await page.locator('#simIncrease').check();
@@ -51,6 +63,6 @@ window.__layout={color:key=>simulatorAtlasView.layer.getLayers().find(l=>l.featu
   await page.locator('#openSimulator').click();
   await page.screenshot({path:path.join(tmp,'atlas-simulator-mobile.png'),fullPage:true});
   assert.deepEqual(errors,[]);
-  console.log('OK: 3 draggable borders, saved sizes/reset, slider-only keyboard controls, open comparison at 1366x768, ADN colors unchanged by selection, matching map, mobile.');
+   console.log('OK: panel resize/persistence, competitiveness order, continuity ranking width, simulator controls, ADN colors, matching map, mobile.');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

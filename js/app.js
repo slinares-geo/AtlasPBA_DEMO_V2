@@ -2,7 +2,7 @@ import { setupSimulator } from './simulator.mjs';
 import { commonCapabilities, commonLevels, difference } from './election-capabilities.mjs';
 import { ADN_ID, ADN_NAME, ADN_LEGEND_LABEL, ADN_DESCRIPTION, ADN_FAMILY, ADN_PALETTE, formatIndex } from './indicator-config.mjs';
 import { attachIndex, indexValue, indexColor } from './adn-model.mjs';
-import { setupPanelResize } from './panel-resize.mjs';
+import { setupPanelResize } from './panel-resize.mjs?v=20261009-1';
 
 const state = {
   map: null,
@@ -1614,7 +1614,7 @@ function renderRanking(sortDirection = null) {
     renderContinuityRanking();
     return;
   }
-  const direction = sortDirection || (state.viewMode === "comparison" ? "abs" : "desc");
+  const direction = sortDirection || (state.viewMode === "comparison" ? "abs" : state.indicator === "competitividad" ? "asc" : "desc");
   const rows = rankedRows();
   rows.sort((a, b) => {
     if (direction === "asc") return a.value - b.value;

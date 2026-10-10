@@ -22,32 +22,34 @@ export function setupPanelResize({onResize}) {
     document.body.append(handle);
     return handle;
   });
-  const active = () => innerWidth > 1180 && !document.body.classList.contains('is-scatter-page') && !document.body.classList.contains('is-continuity-mode');
+  const active = key => innerWidth > 1180
+    && !document.body.classList.contains('is-scatter-page')
+    && (key !== 'bottom' || !document.body.classList.contains('is-continuity-mode'));
   const save = () => { try { localStorage.setItem(STORAGE_KEY,JSON.stringify(settings)); } catch { /* Storage may be disabled. */ } };
   const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
   const bottomMinimum = () => document.body.classList.contains('is-simulator-exploring') ? 260 : 180;
   function apply() {
     shell.style.removeProperty('grid-template-columns');
     column.style.removeProperty('grid-template-rows');
-    if (!active()) return;
+    if (!active('left') && !active('right')) return;
     const width = shell.clientWidth - 2 * parseFloat(getComputedStyle(shell).columnGap || 0);
     if (settings.left || settings.right) {
       let left = clamp((settings.left || .19)*width,240,width-830);
       let right = clamp((settings.right || .15)*width,210,width-left-620);
       shell.style.setProperty('grid-template-columns',`${left}px minmax(0,1fr) ${right}px`,'important');
     }
-    if (settings.bottom) {
+    if (active('bottom') && settings.bottom) {
       const height = column.clientHeight - parseFloat(getComputedStyle(column).rowGap || 0);
       column.style.setProperty('grid-template-rows',`minmax(0,1fr) ${clamp(settings.bottom*height,bottomMinimum(),Math.max(bottomMinimum(),height-240))}px`,'important');
     }
   }
   function place() {
-    const enabled = active();
-    handles.forEach(h => { h.hidden = !enabled; });
-    if (!enabled) return;
+    handles.forEach(h => { h.hidden = !active(h.dataset.resize); });
+    if (!handles.some(h => !h.hidden)) return;
     const rect = column.getBoundingClientRect(), map = pane.getBoundingClientRect();
     const gap = parseFloat(getComputedStyle(shell).columnGap || 0);
     for (const handle of handles) {
+      if (handle.hidden) continue;
       const bottom = handle.dataset.resize === 'bottom';
       Object.assign(handle.style, bottom ? {left:`${rect.left}px`,top:`${map.bottom}px`,width:`${rect.width}px`,height:'12px'} : {
         left:`${handle.dataset.resize === 'left' ? rect.left-gap/2-5 : rect.right+gap/2-5}px`,top:`${rect.top}px`,width:'10px',height:`${rect.height}px`,
@@ -76,7 +78,7 @@ export function setupPanelResize({onResize}) {
   }
   for (const h of handles) {
     h.addEventListener('pointerdown',e => {
-      if (e.button !== 0 || !active()) return;
+      if (e.button !== 0 || !active(h.dataset.resize)) return;
       drag={id:e.pointerId,key:h.dataset.resize,start:snapshot(),x:e.clientX,y:e.clientY};
       h.setPointerCapture(e.pointerId); document.body.classList.add('is-panel-resizing'); e.preventDefault();
     });
@@ -88,7 +90,7 @@ export function setupPanelResize({onResize}) {
     h.addEventListener('pointerup',stop); h.addEventListener('pointercancel',stop); h.addEventListener('lostpointercapture',stop);
     h.addEventListener('dblclick',()=>{delete settings[h.dataset.resize]; apply(); save(); schedule();});
     h.addEventListener('keydown',e=>{
-      if (!active()) return;
+      if (!active(h.dataset.resize)) return;
       if (e.key === 'Home') {delete settings[h.dataset.resize];apply();save();schedule();e.preventDefault();return;}
       const keys=h.dataset.resize==='bottom'?['ArrowUp','ArrowDown']:['ArrowLeft','ArrowRight'];
       if (!keys.includes(e.key)) return;
